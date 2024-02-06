@@ -1,0 +1,21 @@
+<?xml version="1" encoding="UTF-8"?>
+<!DOCTYPE gowin-fpga-project>
+<Project>
+    <Template>FPGA</Template>
+    <Version>5</Version>
+    <Device name="GW2AR-18C" pn="GW2AR-LV18QN88C8/I7">gw2ar18c-000</Device>
+    <FileList>
+        <File path="src/picorv32.v" type="file.verilog" enable="1"/>
+        <File path="src/SDRAM_controller_top_SIP/SDRAM_controller_top_SIP.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/clkdiv5/clkdiv5.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/dvi_tx/dvi_tx.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/fontProm/fontProm.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/pixelGenTxt.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/pllHDMI/pllHDMI.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/pllSystem/pllSystem.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/systemRam/systemRam.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/tangyRiscVSOCTop.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/tangyRiscVSOC.cst" type="file.cst" enable="1"/>
+        <File path="src/tangyRiscVSOC.sdc" type="file.sdc" enable="1"/>
+    </FileList>
+</Project>

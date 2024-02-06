@@ -1,0 +1,15 @@
+[General]
+ipc_version=4
+file=fontProm
+module=fontProm
+target_device=gw2ar18c-000
+type=ram_prom
+version=1.0
+
+[Config]
+DEPTH=2048
+LANG=1
+MEM_FILE=../font.mi
+READ=0
+RESET_MODE=true
+WIDTH=8

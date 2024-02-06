@@ -1,0 +1,13 @@
+[General]
+ipc_version=4
+file=SDRAM_controller_top_SIP
+module=SDRAM_controller_top_SIP
+target_device=gw2ar18c-000
+type=sdrc_emb
+version=3.0
+
+[Config]
+IO_INSERTION=false
+LANG=1
+LOW_POWER=true
+Synthesis_tool=GowinSynthesis

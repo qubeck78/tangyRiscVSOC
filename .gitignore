@@ -1,0 +1,7 @@
+gwsynthesis
+pnr
+temp
+*.elf
+*.o
+*.disasm
+*.rec
