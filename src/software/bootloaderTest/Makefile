@@ -1,6 +1,3 @@
-#
-# Makefile for WhiteDragon user program
-#
 
 AS = riscv-none-embed-as -march=rv32im 
 CC = riscv-none-embed-gcc -march=rv32im -c 
@@ -37,4 +34,4 @@ clean:
 	rm -f *.o *.rec *.disasm *.elf *.mif *.bin
 
 send: prog.rec
-	srecsend prog.rec com3 200000
+	srecsend prog.rec com3 230400
