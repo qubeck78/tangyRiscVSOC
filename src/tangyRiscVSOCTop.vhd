@@ -193,8 +193,9 @@ component pixelGenTxt
         pgDeY:          out std_logic;
         pgPreFetchLine: out std_logic;
         pgFetchEnable:  out std_logic;
-      pgVideoMode:      in  std_logic_vector( 1 downto 0 )
-   );
+    
+        pgVideoMode:      in  std_logic_vector( 1 downto 0 )
+    );
 end component;
 
 
@@ -780,7 +781,7 @@ end process;
                         else '1';
 
 
---                        when systemRAMCE = '1' or fastRAMCE = '1' or registersCE = '1' 
+--                        else '1' when registersCE = '1' 
 --                        else fpAluReady when fpAluCE = '1' 
 --                        else blitterReady when blitterCE = '1' 
 --                        else usbHostReady when usbHostCE = '1' 
@@ -810,7 +811,7 @@ end process;
    (
       clk               => cpuClock,
       resetn            => cpuResetn,
-      --trap:           out std_logic;
+
       mem_valid         => cpuMemValid,
       mem_instr         => cpuMemInstr,
       mem_ready         => cpuMemReady,
@@ -820,18 +821,6 @@ end process;
       mem_wstrb         => cpuWrStrobe,
       mem_rdata         => cpuDin,
 
-      --Look-Ahead Interface
-      --mem_la_read:    out std_logic;
-      --mem_la_write:   out std_logic;
-      --mem_la_addr: out std_logic_vector( 31 downto 0 );
-      --mem_la_wdata:   out std_logic_vector( 31 downto 0 );
-      --mem_la_wstrb:   out std_logic_vector( 3 downto 0 );
-
-      --Pico Co-Processor Interface (PCPI)
-      --pcpi_valid:     out std_logic;
-      --pcpi_insn:      out std_logic_vector( 31 downto 0 );
-      --pcpi_rs1:    out std_logic_vector( 31 downto 0 );
-      --pcpi_rs2:    out std_logic_vector( 31 downto 0 );
       pcpi_wr           => '0',
       pcpi_rd           => ( others => '0' ),
       pcpi_wait         => '0',
@@ -840,11 +829,6 @@ end process;
       --IRQ Interface
       irq               => ( others => '0' )
       --eoi:            out std_logic_vector( 31 downto 0 );
-
-      --Trace Interface
-      --trace_valid: out std_logic;
-      --trace_data:     out std_logic_vector( 35 downto 0 )
-
 );
  
 
