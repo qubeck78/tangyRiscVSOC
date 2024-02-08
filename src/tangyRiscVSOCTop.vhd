@@ -263,6 +263,30 @@ component picorv32 is
 );
 end component;
 
+
+-- UART
+component UART
+    port(
+      --cpu interface
+      reset:            in    std_logic;
+      clock:            in    std_logic;
+      a:                in    std_logic_vector( 15 downto 0 );
+      din:              in    std_logic_vector( 31 downto 0 );
+      dout:             out   std_logic_vector( 31 downto 0 );
+      
+      ce:               in    std_logic;
+      wr:               in    std_logic;
+      dataMask:         in    std_logic_vector( 3 downto 0 );
+      
+      ready:            out   std_logic;
+      
+      --uart interface
+      uartTXD:          out std_logic;
+      uartRXD:          in  std_logic
+    );
+end component;
+
+
 -- signals
 
 -- clocks
@@ -376,6 +400,15 @@ signal cpuDataMask:		std_logic_vector( 3 downto 0 );
 --cpu resetgen
 signal cpuResetGenCounter:  std_logic_vector( 15 downto 0 ); 
 
+-- uart signals
+signal   uartClock:           std_logic;
+
+signal   uartCE:              std_logic;
+signal   uartDoutForCPU:      std_logic_vector( 31 downto 0 );
+signal   uartReady:           std_logic;
+
+signal   uartTxd:             std_logic;
+signal   uartRxd:             std_logic;
 
 begin
 
@@ -396,6 +429,8 @@ begin
 
     cpuClock            <= clkd2_40;
     fpgaCpuMemoryClock  <= clkd2_80;
+
+    uartClock           <= clkd2_80;
 
 
 -- place hdmi pll
@@ -732,7 +767,7 @@ end process;
 
 --   usbHostCE         <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"f03" else '0';
 
---   uartCE            <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"f04" else '0';
+     uartCE            <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"f04" else '0';
 
 --   spiCE             <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"f05" else '0';
 --   
@@ -740,6 +775,7 @@ end process;
 --   
 -- bus slaves ready signals mux
    cpuMemReady       <= systemRamReady when systemRAMCE = '1'
+                        else uartReady when uartCE = '1' 
                         
                         else '1';
 
@@ -748,7 +784,6 @@ end process;
 --                        else fpAluReady when fpAluCE = '1' 
 --                        else blitterReady when blitterCE = '1' 
 --                        else usbHostReady when usbHostCE = '1' 
---                        else uartReady when uartCE = '1' 
 --                        else spiReady when spiCE = '1' 
 --                        else cpuDmaReady when dmaMemoryCE = '1' 
 --                        else sdramCtrlSdramReady when sdramCtrlCE = '1' 
@@ -757,12 +792,12 @@ end process;
 
 -- bus slaves data outputs mux
    cpuDin            <= systemRamDoutForCPU                       when cpuAOutFull( 31 downto 20 ) = x"000" else 
+                        uartDoutForCPU                            when cpuAOutFull( 31 downto 20 ) = x"f04" else
 --                        fastRamDoutForCPU                         when cpuAOutFull( 31 downto 24 ) = x"30"  else 
 --                        registersDoutForCPU                       when cpuAOutFull( 31 downto 20 ) = x"f00" else
 --                        fpAluDoutForCPU                           when cpuAOutFull( 31 downto 20 ) = x"f01" else
 --                        blitterDoutForCPU                         when cpuAOutFull( 31 downto 20 ) = x"f02" else
 --                        usbHostDoutForCPU                         when cpuAOutFull( 31 downto 20 ) = x"f03" else 
---                        uartDoutForCPU                            when cpuAOutFull( 31 downto 20 ) = x"f04" else
 --                        spiDoutForCPU                             when cpuAOutFull( 31 downto 20 ) = x"f05" else
 --                        dmaDoutForCPU                             when cpuAOutFull( 31 downto 24 ) = x"20"  else
 --                        sdramCtrlDataOutForCPU                    when cpuAOutFull( 31 downto 28 ) = x"4"   else
@@ -843,6 +878,29 @@ begin
 
 end process;
  
+-- place uart
+   
+   extUartTx   <= uartTxd;
+   uartRxd     <= extUartRx;
+
+   UARTInst: UART
+    port map(
+      reset    => reset,
+      clock    => uartClock,     
+      
+      a        => cpuAOut( 15 downto 0 ),
+      din      => cpuDOut,
+      dout     => uartDoutForCPU,
+      ce       => uartCE,
+      wr       => cpuWr,
+      dataMask => cpuDataMask,
+      ready    => uartReady,        
+        
+      uartTXD  => uartTxd,
+      uartRXD  => uartRxd
+      
+    );  
+
 
 --video out mux (pixelGenTxt )
 
