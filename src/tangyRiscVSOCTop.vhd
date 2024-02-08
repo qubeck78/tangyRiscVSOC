@@ -340,7 +340,6 @@ signal sdrcWrdAck:                  std_logic;
 -- video mux signals
 signal   vmMode:  std_logic_vector( 15 downto 0 );
 
-
 -- font rom signals
 signal   fontRomA:        std_logic_vector( 10 downto 0 );
 signal   fontRomDout:     std_logic_vector( 7 downto 0 );
@@ -401,6 +400,56 @@ signal cpuDataMask:		std_logic_vector( 3 downto 0 );
 --cpu resetgen
 signal cpuResetGenCounter:  std_logic_vector( 15 downto 0 ); 
 
+-- gpo signals
+signal   gpoRegister:      std_logic_vector( 7 downto 0 );
+
+-- registers signals
+signal   registersClock:      std_logic;
+
+type     regState_T is ( rsWaitForRegAccess, rsWaitForBusCycleEnd );
+signal   registerState:       regState_T;
+
+signal   registersCE:         std_logic;
+signal   registersDoutForCPU: std_logic_vector( 31 downto 0 );
+
+-- tick timer signals
+signal   tickTimerClock:            std_logic;
+signal   tickTimerReset:            std_logic;
+signal   tickTimerPrescalerCounter: std_logic_vector( 31 downto 0 );
+signal   tickTimerCounter:          std_logic_vector( 31 downto 0 );
+
+constant tickTimerPrescalerValue:   integer:=   40000 - 1;  --1ms tick timer @40MHz
+
+-- frameTimer signals
+signal   frameTimerClock:        std_logic;
+signal   frameTimerReset:        std_logic;
+signal   frameTimerPgPrvVSync:   std_logic;
+signal   frameTimerValue:        std_logic_vector( 31 downto 0 );
+
+-- dma process signals
+signal   dmaClock:               std_logic;
+                     
+-- dma ch0 buf ram signals ( for gfx pixel gen )
+signal   gfxBufRamDOut:          std_logic_vector( 31 downto 0 );
+signal   gfxBufRamRdA:           std_logic_vector( 8 downto 0 );
+signal   dmaDisplayPointerStart: std_logic_vector( 20 downto 0 );
+
+-- dma ch2 signals (blitter)
+signal   dmaCh2Request:          std_logic;
+signal   dmaCh2Ready:            std_logic;
+signal   dmaCh2RWn:              std_logic;
+signal   dmaCh2Din:              std_logic_vector( 31 downto 0 );
+signal   dmaCh2Dout:             std_logic_vector( 31 downto 0 );
+signal   dmaCh2A:                std_logic_vector( 21 downto 0 );
+signal   dmaCh2TransferSize:     std_logic;
+signal   dmaCh2TransferMask:     std_logic_vector( 1 downto 0 );
+
+-- dma ch3 signals ( cpu )
+signal   dmaMemoryCE:            std_logic;
+signal   cpuDmaReady:            std_logic;
+signal   dmaDoutForCPU:          std_logic_vector( 31 downto 0 );
+
+
 -- uart signals
 signal   uartClock:           std_logic;
 
@@ -414,9 +463,6 @@ signal   uartRxd:             std_logic;
 begin
 
 
-    vmMode  <= x"0000";
-
-
 -- reset logic based on pll lock
 
     reset   <= not pllHDMILocked;
@@ -425,15 +471,33 @@ begin
 
 -- clock configuration
 
+-- txt / gfx pixel gen clock
     pgClock             <= clk25;
+   
+-- hdmi encoder clock
     dviClock            <= clk125;
 
+-- cpu clock
     cpuClock            <= clkd2_40;
+
+-- fpga cpu memory clock ( system RAM )
     fpgaCpuMemoryClock  <= clkd2_80;
 
+-- registers process clock
+    registersClock      <= clkd2_80;
+
+-- tick timer clock
+    tickTimerClock      <= clkd2_40;
+
+-- frame timer process clock (not timer clock)
+    frameTimerClock     <= clkd2_80;
+
+-- uart clock
     uartClock           <= clkd2_80;
 
-
+-- direct memory access clock
+    dmaClock            <= clkd2_80;
+    
 -- place hdmi pll
 pllHDMIInst:pllHDMI
     port map(
@@ -760,7 +824,7 @@ end process;
 --         
 --   dmaMemoryCE       <= '1' when ( cpuMemValid = '1'  ) and cpuAOutFull( 31 downto 24 ) = x"20" else '0';
 --         
---   registersCE       <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"f00" else '0';
+    registersCE       <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"f00" else '0';
 
 --   fpAluCE           <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"f01" else '0';
 --   
@@ -777,25 +841,24 @@ end process;
 -- bus slaves ready signals mux
    cpuMemReady       <= systemRamReady when systemRAMCE = '1'
                         else uartReady when uartCE = '1' 
+                        else '1' when registersCE = '1' 
                         
                         else '1';
 
 
---                        else '1' when registersCE = '1' 
 --                        else fpAluReady when fpAluCE = '1' 
 --                        else blitterReady when blitterCE = '1' 
 --                        else usbHostReady when usbHostCE = '1' 
 --                        else spiReady when spiCE = '1' 
 --                        else cpuDmaReady when dmaMemoryCE = '1' 
 --                        else sdramCtrlSdramReady when sdramCtrlCE = '1' 
---                        else '1';
+
 
 
 -- bus slaves data outputs mux
    cpuDin            <= systemRamDoutForCPU                       when cpuAOutFull( 31 downto 20 ) = x"000" else 
                         uartDoutForCPU                            when cpuAOutFull( 31 downto 20 ) = x"f04" else
---                        fastRamDoutForCPU                         when cpuAOutFull( 31 downto 24 ) = x"30"  else 
---                        registersDoutForCPU                       when cpuAOutFull( 31 downto 20 ) = x"f00" else
+                        registersDoutForCPU                       when cpuAOutFull( 31 downto 20 ) = x"f00" else
 --                        fpAluDoutForCPU                           when cpuAOutFull( 31 downto 20 ) = x"f01" else
 --                        blitterDoutForCPU                         when cpuAOutFull( 31 downto 20 ) = x"f02" else
 --                        usbHostDoutForCPU                         when cpuAOutFull( 31 downto 20 ) = x"f03" else 
@@ -862,8 +925,142 @@ begin
 
 end process;
  
--- place uart
+
+--registers process
+registers: process( all )
+
+begin
    
+   if rising_edge( registersClock ) then
+   
+      if reset = '1' then
+      
+         registersDoutForCPU  <= ( others => '0' );
+         
+         --default register values
+         vmMode                  <= x"0000";
+         dmaDisplayPointerStart  <= ( others => '0' );
+         gpoRegister             <= ( others => '1' );
+         
+         tickTimerReset             <= '0';
+                  
+         registerState              <= rsWaitForRegAccess;
+
+      else
+      
+         tickTimerReset             <= '0';
+         frameTimerReset            <= '0';
+         
+         case registerState is
+         
+            when rsWaitForRegAccess =>
+         
+               if registersCE = '1' then
+                  
+                  case cpuAOut( 7 downto 0 ) is
+               
+               
+                     --rw 0xf0000000 - videoMuxMode
+                     when x"00" =>
+               
+                        registersDoutForCPU  <= x"0000" & vmMode;
+                        
+                        if cpuWr = '1' then
+                        
+                           vmMode   <= cpuDOut( 15 downto 0 );
+                        
+                        end if;
+               
+                     --rw 0xf0000004 - videoVSync
+                     when x"01" =>
+               
+                        registersDoutForCPU  <= x"0000" & x"000" & "000" & pgVSync;
+
+                     --rw 0xf0000008 - dmaDisplayPointerStart
+                     when x"02" =>
+               
+                        registersDoutForCPU  <= "00000000000" & dmaDisplayPointerStart;
+                        
+                        if cpuWr = '1' then
+                        
+                           dmaDisplayPointerStart  <= cpuDOut( 20 downto 0 );
+                        
+                        end if;
+                                       
+                     --rw 0xf000000c - gpoPort
+                     when x"03" =>
+               
+                        registersDoutForCPU  <= x"0000" & x"00" & gpoRegister;
+                        
+                        if cpuWr = '1' then
+                        
+                           gpoRegister <= cpuDOut( 7 downto 0 );
+                        
+                        end if;
+                        
+                     ---w 0xf0000010 - tickTimerConfig
+                     when x"04" =>
+                                 
+                        if cpuWr = '1' then
+                        
+                           tickTimerReset <= cpuDOut( 0 );
+                        
+                        end if;  
+                        
+                     --r- 0xf0000014 - tickTimerValue
+                     when x"05" =>
+                              
+                        registersDoutForCPU  <= tickTimerCounter;
+                           
+                              
+                              
+                     --rw 0xf0000018 - frameTimer (write resets timer)
+                     when x"06" =>
+                     
+                        registersDoutForCPU  <= frameTimerValue;
+                     
+                        if cpuWr = '1' then
+                           
+                              frameTimerReset <= '1';
+                              
+                        end if;
+                                             
+
+                     when others =>
+
+                        registersDoutForCPU  <= ( others => '0' );
+                     
+                  end case; --cpuAOut( 7 downto 0 ) is
+               
+                  registerState  <= rsWaitForBusCycleEnd;
+               
+               end if; --registersCE = '1'
+         
+            when rsWaitForBusCycleEnd =>
+                     
+               --wait for bus cycle to end
+               if registersCE = '0' then
+               
+                  registerState <= rsWaitForRegAccess;
+                  
+               end if;
+         
+            when others =>
+
+               registerState <= rsWaitForRegAccess;
+            
+         end case;   --registerState is
+         
+      end if; --! reset = '1'
+         
+   end if; --rising_edge( registersClock )
+   
+
+end process;
+
+
+
+-- place uart
    extUartTx   <= uartTxd;
    uartRxd     <= extUartRx;
 
@@ -884,6 +1081,77 @@ end process;
       uartRXD  => uartRxd
       
     );  
+
+
+
+--tick timer process
+tickTimer: process( all )
+begin
+
+   if rising_edge( tickTimerClock ) then
+   
+      if reset = '1' then
+         
+         tickTimerPrescalerCounter  <= ( others => '0' );
+         tickTimerCounter           <= ( others => '0' );
+         
+      
+      else
+      
+         if tickTimerPrescalerCounter /= x"00000000" then
+            
+            tickTimerPrescalerCounter <= tickTimerPrescalerCounter - 1;
+            
+         else
+         
+            tickTimerPrescalerCounter <= conv_std_logic_vector( tickTimerPrescalerValue, tickTimerPrescalerCounter'length );
+            
+            tickTimerCounter <= tickTimerCounter + 1;
+         
+         end if;
+      
+         if tickTimerReset = '1' then
+
+            tickTimerPrescalerCounter  <= ( others => '0' );
+            tickTimerCounter           <= ( others => '0' );
+         
+         end if;
+         
+      
+      end if;  --reset = '1'
+   
+   
+   end if; --rising_edge( tickTimerClock )
+
+end process;
+
+
+-- frame timer process
+frameTimerProcess: process( all )
+begin
+   
+   if rising_edge( frameTimerClock ) then
+
+      if frameTimerReset = '1' then
+      
+         frameTimerValue <= ( others => '0' );
+         
+      else
+      
+         frameTimerPgPrvVSync <= pgVSync;
+         
+         
+         if frameTimerPgPrvVSync = '0' and pgVSync = '1' then
+      
+            frameTimerValue <= frameTimerValue + '1';
+            
+         end if;
+      
+      end if;
+   
+   end if; -- rising_edge( frameTimerClock )
+end process;
+
 
 
 --video out mux (pixelGenTxt )
