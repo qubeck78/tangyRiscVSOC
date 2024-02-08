@@ -1,0 +1,599 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "main.cpp",
+			"settings":
+			{
+				"buffer_size": 1287,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			},
+			"undo_stack":
+			[
+				[
+					11,
+					1,
+					"left_delete",
+					null,
+					"AQAAAIkHAAAAAAAAiQcAAAAAAAALAAAAMHgxMDAwMDAwMDs",
+					"AQAAAAAAAAABAAAAlAcAAAAAAACJBwAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					12,
+					4,
+					"delete_word",
+					{
+						"forward": false
+					},
+					"BAAAAIcHAAAAAAAAhwcAAAAAAAACAAAAKimCBwAAAAAAAIIHAAAAAAAABQAAAGxvbmcgeQcAAAAAAAB5BwAAAAAAAAkAAAB1bnNpZ25lZCB4BwAAAAAAAHgHAAAAAAAAAQAAACg",
+					"AQAAAAAAAAABAAAAiQcAAAAAAACJBwAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					13,
+					1,
+					"paste",
+					null,
+					"AQAAAHgHAAAAAAAAkwcAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAeAcAAAAAAAB4BwAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					18,
+					1,
+					"right_delete",
+					null,
+					"AQAAAJQHAAAAAAAAlAcAAAAAAACZAQAACXVhcnREYXRhUmVnID0gKHVuc2lnbmVkIGxvbmcgKikweGYwMDAwMDAwOwoJdWFydFN0YXR1c1JlZyA9ICh1bnNpZ25lZCBsb25nICopMHhmMDAwMDAwNDsKCQoJLyoKCS8vY3ljbG9uZSBJSUkgdmVyc2lvbiAyTUIKCWdmeFJhbUIgPSAoIHVuc2lnbmVkIGNoYXIgKikgMHgwMDIwMDAwMDsKCWdmeFJhbVcgPSAoIHVuc2lnbmVkIHNob3J0ICopMHgwMDIwMDAwMDsKCWdmeFJhbUwgPSAoIHVuc2lnbmVkIGxvbmcgKikgMHgwMDIwMDAwMDsKCSovCgoJLy9jeWNsb25lIGl2IGd4IHZlcnNpb24gOE1CCglnZnhSYW1CID0gKCB1bnNpZ25lZCBjaGFyICopIDB4MjAwMDAwMDA7CglnZnhSYW1XID0gKCB1bnNpZ25lZCBzaG9ydCAqKTB4MjAwMDAwMDA7CglnZnhSYW1MID0gKCB1bnNpZ25lZCBsb25nICopIDB4MjAwMDAwMDA7Cg",
+					"AQAAAAAAAAABAAAAlAcAAAAAAAAtCQAAAAAAAAAAAAAAAAAA"
+				],
+				[
+					26,
+					1,
+					"right_delete",
+					null,
+					"AQAAAHwAAAAAAAAAfAAAAAAAAACEAAAAdW5zaWduZWQgbG9uZyAqdWFydERhdGFSZWc7CnVuc2lnbmVkIGxvbmcgKnVhcnRTdGF0dXNSZWc7CnVuc2lnbmVkIGNoYXIgICpnZnhSYW1COwp1bnNpZ25lZCBzaG9ydCAqZ2Z4UmFtVzsKdW5zaWduZWQgbG9uZyAqZ2Z4UmFtTDsK",
+					"AQAAAAAAAAABAAAAfAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAA"
+				],
+				[
+					29,
+					1,
+					"right_delete",
+					null,
+					"AQAAAH0AAAAAAAAAfQAAAAAAAAAZAAAAdm9pZCAoKmJvb3RFbnRyeSkodm9pZCk7Cg",
+					"AQAAAAAAAAABAAAAfQAAAAAAAACWAAAAAAAAAAAAAAAAAAAA"
+				],
+				[
+					36,
+					1,
+					"insert",
+					{
+						"characters": "shg"
+					},
+					"BAAAAFkAAAAAAAAAWgAAAAAAAAAAAAAAWgAAAAAAAABaAAAAAAAAAAQAAABsb25nWgAAAAAAAABbAAAAAAAAAAAAAABbAAAAAAAAAFwAAAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAWQAAAAAAAABdAAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					37,
+					1,
+					"left_delete",
+					null,
+					"AQAAAFsAAAAAAAAAWwAAAAAAAAABAAAAZw",
+					"AQAAAAAAAAABAAAAXAAAAAAAAABcAAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					38,
+					1,
+					"insert",
+					{
+						"characters": "ort"
+					},
+					"AwAAAFsAAAAAAAAAXAAAAAAAAAAAAAAAXAAAAAAAAABdAAAAAAAAAAAAAABdAAAAAAAAAF4AAAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAWwAAAAAAAABbAAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					42,
+					1,
+					"right_delete",
+					null,
+					"AQAAADkAAAAAAAAAOQAAAAAAAAAWAAAALy8jZGVmaW5lIF9ETUFSQU1URVNUCg",
+					"AQAAAAAAAAABAAAAOQAAAAAAAABPAAAAAAAAAAAAAAAAAAAA"
+				],
+				[
+					51,
+					1,
+					"right_delete",
+					null,
+					"AQAAAJECAAAAAAAAkQIAAAAAAAB6AAAAaW50IHVhcnRHZXRDKCkKewoJdm9sYXRpbGUgaW50IGo7CgoJaWYgKCAqdWFydFN0YXR1c1JlZyAmIDEgKQoJewkJCQkKCQlyZXR1cm4gKnVhcnREYXRhUmVnOwoJfQoJZWxzZQoJewoJCXJldHVybiAtMTsKCX0KfQo",
+					"AQAAAAAAAAABAAAAkQIAAAAAAAALAwAAAAAAAAAAAAAAAAAA"
+				],
+				[
+					61,
+					3,
+					"right_delete",
+					null,
+					"AwAAAMMGAAAAAAAAwwYAAAAAAAA4AAAACWZvciggaSA9IDA7IGkgPCAxNjAqMjQwOyBpKysgKQoJewoJIGdmeFJhbUxbaV0gPSAwOwoJfQrDBgAAAAAAAMMGAAAAAAAAAQAAAAnDBgAAAAAAAMMGAAAAAAAAAQAAAAo",
+					"AQAAAAAAAAABAAAAwwYAAAAAAAD7BgAAAAAAAAAAAAAAAAAA"
+				],
+				[
+					64,
+					1,
+					"right_delete",
+					null,
+					"AQAAAPsGAAAAAAAA+wYAAAAAAAA/AAAACS8vanVtcCB0byB0ZXN0IHJvbQoJLy9hc20oIiBsYSBhNSwgMHgwMGEwMDAwMFxuIGphbHIgYTVcbiIgKTsK",
+					"AQAAAAAAAAABAAAA+wYAAAAAAAA6BwAAAAAAAAAAAAAAAAAA"
+				],
+				[
+					71,
+					1,
+					"right_delete",
+					null,
+					"AQAAAIEIAAAAAAAAgQgAAAAAAACMAwAACSNpZmRlZiBfRE1BUkFNVEVTVAoJcmFuZG9tU3RhdGVTdG9yZSA9IHJhbmRvbV9zdGF0ZTsKCQoJZm9yKCBpID0gMDsgaSA8ICggMTAyNCAqIDEwMjQgKSAqIDg7IGkrPTQgKQoJewoJCXJuZEwgPSByYW5kb21OdW1iZXIoKTsJCgkJZ2Z4UmFtQlsgaSBdID0gcm5kTCAmIDB4ZmY7CgkJZ2Z4UmFtQlsgaSsxIF0gPSAoIHJuZEwgPj4gOCApJiAweGZmOwoJCWdmeFJhbUJbIGkrMiBdID0gKCBybmRMID4+IDE2ICkmIDB4ZmY7CgkJZ2Z4UmFtQlsgaSszIF0gPSAoIHJuZEwgPj4gMjQgKSYgMHhmZjsKCX0KCQoJCglmb3IoIGkgPSAwOyBpIDwgKCAoIDEwMjQgKiAxMDI0ICkgKiA4ICkgLyA0OyBpKysgKQoJewoJCWdmeFJhbUxbIGkgXSA9IGdmeFJhbUxbIGkgXSBeIDB4ZmZmZmZmZmY7Cgl9Cglmb3IoIGkgPSAwOyBpIDwgKCAoIDEwMjQgKiAxMDI0ICkgKiA4ICkgLyA0OyBpKysgKQoJewoJCWdmeFJhbUxbIGkgXSA9IGdmeFJhbUxbIGkgXSBeIDB4ZmZmZmZmZmY7Cgl9CgkKCXJhbmRvbV9zdGF0ZSA9IHJhbmRvbVN0YXRlU3RvcmU7CgoJZm9yKCBpID0gMDsgaSA8ICggKCAxMDI0ICogMTAyNCApICogOCApIC8gNDsgaSsrICkKCXsKCQoJCXJuZEwgPSByYW5kb21OdW1iZXIoKTsKCQltZW1MID0gZ2Z4UmFtTFsgaSBdOwoJCQoJCWlmKCBtZW1MICE9IHJuZEwgKQoJCXsKCQkKCQkJcHJpbnQoIiBlcnJvciBhdCAiKTsKCQkJaXRvYUhleDhEaWdpdHMoIGksIGJ1ZiApOwoJCQlwcmludCggYnVmICk7CgkJCXByaW50KCIgIik7CgkJCQoJCQlpdG9hSGV4OERpZ2l0cyggcm5kTCwgYnVmICk7CgkJCXByaW50KCBidWYgKTsKCQkJcHJpbnQoIiAiKTsKCQkJCgkJCWl0b2FIZXg4RGlnaXRzKCBtZW1MLCBidWYgKTsKCQkJcHJpbnQoIGJ1ZiApOwoJCQlkb3t9d2hpbGUoIDEgKTsKCQl9Cgl9CgkjZW5kaWYKCQo",
+					"AQAAAAAAAAABAAAAgQgAAAAAAAANDAAAAAAAAAAAAAAAAAAA"
+				],
+				[
+					78,
+					1,
+					"right_delete",
+					null,
+					"AQAAAHkAAAAAAAAAeQAAAAAAAAAnAAAAdW5zaWduZWQgaW50IHJhbmRvbV9zdGF0ZSA9IDMyNDIzMjM0NTk7",
+					"AQAAAAAAAAABAAAAoAAAAAAAAAB5AAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					83,
+					1,
+					"right_delete",
+					null,
+					"AQAAAHsAAAAAAAAAewAAAAAAAAClAAAAaW50IHJhbmRvbU51bWJlcigpCnsKICAgIHVuc2lnbmVkIGludCByID0gcmFuZG9tX3N0YXRlOwogICAgciBePSByIDw8IDEzOwogICAgciBePSByID4+IDE3OwogICAgciBePSByIDw8IDU7CiAgICByYW5kb21fc3RhdGUgPSByOwogICAgcmV0dXJuIChpbnQpKHIgJiBJTlRfTUFYKTsKfSAK",
+					"AQAAAAAAAAABAAAAewAAAAAAAAAgAQAAAAAAAAAAAAAAAAAA"
+				],
+				[
+					84,
+					2,
+					"left_delete",
+					null,
+					"AgAAAHoAAAAAAAAAegAAAAAAAAABAAAACnkAAAAAAAAAeQAAAAAAAAABAAAACg",
+					"AQAAAAAAAAABAAAAewAAAAAAAAB7AAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					86,
+					1,
+					"left_delete",
+					null,
+					"AQAAAGcAAAAAAAAAZwAAAAAAAAABAAAACg",
+					"AQAAAAAAAAABAAAAaAAAAAAAAABoAAAAAAAAAAAAAAAAAAAA"
+				],
+				[
+					93,
+					1,
+					"right_delete",
+					null,
+					"AQAAAMMBAAAAAAAAwwEAAAAAAADfAgAAdm9pZCBoZXhEaWdpdChjaGFyICpzdHJpbmcsY2hhciBkaWdpdCkKewoJZGlnaXQgJj0gMHgwZjsKCQogICAgaWYoIGRpZ2l0PDEwICkKICAgIHsKCQlzdHJpbmdbMF0gPSBkaWdpdCArICcwJzsKCQlzdHJpbmdbMV0gPSAwOwogICAgfQoJZWxzZQoJewoJCXN0cmluZ1swXSA9IGRpZ2l0ICsgJ2EnIC0gMTA7CgkJc3RyaW5nWzFdID0gMDsKICAgIH0KfQoKdm9pZCBpdG9hSGV4MkRpZ2l0cyggaW50IHZhbHVlLCBjaGFyKiBzdHIgKQp7CgloZXhEaWdpdCgmc3RyWzBdLCAoIHZhbHVlID4+IDQgKSAmIDB4MGYgKTsKCWhleERpZ2l0KCZzdHJbMV0sICggdmFsdWUgKSAmIDB4MGYgKTsKfQoKdm9pZCBpdG9hSGV4OERpZ2l0cyggaW50IHZhbHVlLCBjaGFyKiBzdHIgKQp7CgloZXhEaWdpdCgmc3RyWzBdLCAoIHZhbHVlID4+IDI4ICkgJiAweDBmICk7CgloZXhEaWdpdCgmc3RyWzFdLCAoIHZhbHVlID4+IDI0ICkgJiAweDBmICk7CgoJaGV4RGlnaXQoJnN0clsyXSwgKCB2YWx1ZSA+PiAyMCApICYgMHgwZiApOwoJaGV4RGlnaXQoJnN0clszXSwgKCB2YWx1ZSA+PiAxNiApICYgMHgwZiApOwoKCWhleERpZ2l0KCZzdHJbNF0sICggdmFsdWUgPj4gMTIgKSAmIDB4MGYgKTsKCWhleERpZ2l0KCZzdHJbNV0sICggdmFsdWUgPj4gOCApICYgMHgwZiApOwoKCWhleERpZ2l0KCZzdHJbNl0sICggdmFsdWUgPj4gNCkgJiAweDBmICk7CgloZXhEaWdpdCgmc3RyWzddLCAoIHZhbHVlICkgJiAweDBmICk7Cn0K",
+					"AQAAAAAAAAABAAAAwwEAAAAAAACiBAAAAAAAAAAAAAAAAAAA"
+				],
+				[
+					94,
+					1,
+					"left_delete",
+					null,
+					"AQAAAMIBAAAAAAAAwgEAAAAAAAABAAAACg",
+					"AQAAAAAAAAABAAAAwwEAAAAAAADDAQAAAAAAAAAAAAAAAPC/"
+				]
+			]
+		},
+		{
+			"file": "Makefile",
+			"settings":
+			{
+				"buffer_size": 842,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			},
+			"undo_stack":
+			[
+				[
+					5,
+					1,
+					"insert",
+					{
+						"characters": "230400"
+					},
+					"BwAAAEQDAAAAAAAARQMAAAAAAAAAAAAARQMAAAAAAABFAwAAAAAAAAYAAAAxMTUyMDBFAwAAAAAAAEYDAAAAAAAAAAAAAEYDAAAAAAAARwMAAAAAAAAAAAAARwMAAAAAAABIAwAAAAAAAAAAAABIAwAAAAAAAEkDAAAAAAAAAAAAAEkDAAAAAAAASgMAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAARAMAAAAAAABKAwAAAAAAAAAAAAAAAPC/"
+				]
+			]
+		}
+	],
+	"build_system": "Packages/User/make send.sublime-build",
+	"build_system_choices":
+	[
+		[
+			[
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					""
+				],
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					"Run"
+				]
+			],
+			[
+				"Packages/C++/C++ Single File.sublime-build",
+				""
+			]
+		],
+		[
+			[
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					""
+				],
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					"Run"
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					""
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					"Clean"
+				]
+			],
+			[
+				"Packages/Makefile/Make.sublime-build",
+				"Clean"
+			]
+		],
+		[
+			[
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					""
+				],
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					"Run"
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					""
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					"Clean"
+				],
+				[
+					"Packages/User/make run.sublime-build",
+					""
+				],
+				[
+					"Packages/User/make send.sublime-build",
+					""
+				]
+			],
+			[
+				"Packages/User/make send.sublime-build",
+				""
+			]
+		],
+		[
+			[
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					""
+				],
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					"Run"
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					""
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					"Clean"
+				],
+				[
+					"Packages/User/make send.sublime-build",
+					""
+				]
+			],
+			[
+				"Packages/Makefile/Make.sublime-build",
+				""
+			]
+		],
+		[
+			[
+				[
+					"Packages/Makefile/Make.sublime-build",
+					""
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					"Clean"
+				],
+				[
+					"Packages/User/make send.sublime-build",
+					""
+				]
+			],
+			[
+				"Packages/Makefile/Make.sublime-build",
+				""
+			]
+		]
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"Package Control: ",
+				"Package Control: Enable Package"
+			],
+			[
+				"package control: install package",
+				"Package Control: Install Package"
+			],
+			[
+				"install package control",
+				"Install Package Control"
+			]
+		],
+		"width": 0.0
+	},
+	"console":
+	{
+		"height": 141.0,
+		"history":
+		[
+			"help",
+			"dir",
+			"dire"
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"expanded_folders":
+	[
+		"/C/Users/qubec/Documents/Development/ProjektyVHDL/TangNano20K/tangyRiscVSOC/tangyRiscVSOC/src/software/bootloaderTest"
+	],
+	"file_history":
+	[
+		"/C/Users/qubec/Documents/Development/ProjektyVHDL/TangNano20K/tangyRiscVSOC/tangyRiscVSOC/src/software/bootloader/main.cpp",
+		"/C/Users/qubec/Documents/Development/ProjektyVHDL/C4BaseBoard/RiscVSOCQ13/software/gfxLib/bsp.h",
+		"/C/Users/qubec/Documents/Development/ProjektyVHDL/TangNano20K/tangyRiscVSOC/tangyRiscVSOC/src/software/bootloader/startup.S",
+		"/C/Users/qubec/Documents/Development/ProjektyVHDL/TangNano20K/tangyRiscVSOC/tangyRiscVSOC/src/software/bootloader/boot.rec",
+		"/C/Users/qubec/Documents/Development/ProjektyVHDL/TangNano20K/tangyRiscVSOC/tangyRiscVSOC/src/software/bootloader/Makefile",
+		"/C/Users/qubec/Documents/Development/ProjektyVHDL/TangNano20K/tangyRiscVSOC/tangyRiscVSOC/src/software/bootloader/ram.ld",
+		"/C/Users/qubec/Documents/Development/ProjektyVHDL/C4BaseBoard/RiscV/gfxLib/bsp.h",
+		"/C/Users/qubec/Documents/Development/ProjektyVHDL/C4BaseBoard/RiscV/gfxLib/bsp.cpp",
+		"/C/Users/qubec/Documents/Development/ProjektyVHDL/C4BaseBoard/RiscV/gfxLibSlideshow/main.cpp",
+		"/C/Users/qubec/Documents/Development/ProjektyVHDL/C4BaseBoard/RiscV/gfxLibSlideshow/ram.ld",
+		"/C/Users/qubec/Documents/Development/ProjektyVHDL/C4BaseBoard/RiscV/gfxLibSlideshow/startup.S",
+		"/C/Users/qubec/Documents/Development/ProjektyVHDL/C4BaseBoard/RiscV/gfxLibSlideshow/main.h",
+		"/C/Users/qubec/Documents/Development/ProjektyVHDL/C4BaseBoard/RiscV/gfxLib/picojpeg.cpp",
+		"/C/Users/qubec/AppData/Roaming/Sublime Text/Packages/User/make send.sublime-build",
+		"/C/Users/qubec/AppData/Roaming/Sublime Text/Packages/User/Preferences.sublime-settings",
+		"/C/Users/qubec/Documents/Development/ProjektyVHDL/C4BaseBoard/RiscV/gfxLibSlideshow/slideshowProject.sublime-project",
+		"/C/Users/qubec/Documents/Development/ProjektyVHDL/C4BaseBoard/RiscV/gfxLibSlideshow/Makefile",
+		"/C/Users/qubec/Documents/Development/ProjektyVHDL/C4BaseBoard/RiscV/usbHidTest/main.cpp",
+		"/C/Users/qubec/Documents/Development/ProjektyVHDL/C4BaseBoard/RiscVSOCQ13/C4RiscVSOCTop.vhd"
+	],
+	"find":
+	{
+		"height": 40.0
+	},
+	"find_in_files":
+	{
+		"height": 0.0,
+		"where_history":
+		[
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"displayRam",
+			"for",
+			"0x0c00",
+			"float"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+		],
+		"reverse": false,
+		"scrollbar_highlights": true,
+		"show_context": true,
+		"use_buffer2": true,
+		"use_gitignore": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "main.cpp",
+					"selected": true,
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1287,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								450,
+								450
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 798.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"stack_multiselect": false,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "Makefile",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 842,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								842,
+								842
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Makefile/Makefile.sublime-syntax",
+							"tab_size": 3,
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 285.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"stack_multiselect": false,
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 28.0
+	},
+	"input":
+	{
+		"height": 0.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.exec":
+	{
+		"height": 191.0
+	},
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"pinned_build_system": "",
+	"project": "bootloaderTest.sublime-project",
+	"replace":
+	{
+		"height": 52.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 500.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"",
+				"C:\\Users\\qubec\\Documents\\Development\\ProjektyVHDL\\C4BaseBoard\\RiscVSOCQ13\\software\\slideshow\\slideshowProject.sublime-project"
+			]
+		],
+		"width": 380.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 172.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}

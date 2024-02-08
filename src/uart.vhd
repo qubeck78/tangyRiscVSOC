@@ -9,7 +9,7 @@ entity UART is
 generic(
 
     clockFreq               : integer := 80000000;
-    baudRate                : integer := 200000
+    baudRate                : integer := 230400
 
 );
 
