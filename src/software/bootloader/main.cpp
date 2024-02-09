@@ -31,9 +31,9 @@ int print( char *buf )
 
 		}else if( c == 10 )
 		{
-			screenIndex -= screenIndex % 40;
-			screenIndex += 40;
-			if( screenIndex >= 880 )
+			screenIndex -= screenIndex % 80;
+			screenIndex += 80;
+			if( screenIndex >= 2400 )
 			{
 				screenIndex = 0;
 			}	
@@ -388,6 +388,17 @@ int decodeAndExecuteS9Record( char *buf )
 	
 }
 
+void spaceDistance( ulong n )
+{
+	ulong i;
+
+	for( i = 0 ; i < n; i++ )
+	{
+		print( (char*) " " );
+	}
+
+}
+
 int main()
 {
 	int i;
@@ -399,24 +410,33 @@ int main()
 	
 	
 	
-	//txt mode only
-	bsp->videoMuxMode = 0x0;
+	//80 column txt mode only
+	bsp->videoMuxMode = 0x0004;
 	
 	
 	screenIndex = 0;	
 
-	for( i = 0; i < 1200 ; i++ )
+	for( i = 0; i < 2400 ; i++ )
 	{
 	  displayRam[i] = _TXT_ATTR;
 	}
 
 
+   print( (char*) "\n\n\n\n" );  
 
-	print( (char*)"\n\nTangyRiscVSOC bootloader B20240206\n\nWaiting for data\n\n" );
+   spaceDistance( 40 - 13 ); print( (char*) "        |.\\__/.|    (~\\ \n" );
+   spaceDistance( 40 - 13 ); print( (char*) "        | O O  |     ) ) \n" );
+   spaceDistance( 40 - 13 ); print( (char*) "      _.|  T   |_   ( (  \n" );   
+   spaceDistance( 40 - 13 ); print( (char*) "   .-- ((---- ((-------. \n" );
+   spaceDistance( 40 - 13 ); print( (char*) "   |                   | \n" );
+   spaceDistance( 40 - 13 ); print( (char*) "   |tangySOC bootloader| \n" );
+   spaceDistance( 40 - 13 ); print( (char*) "   |     B20240209     | \n" );
+   spaceDistance( 40 - 13 ); print( (char*) "   |                   | \n" );
+   spaceDistance( 40 - 13 ); print( (char*) "   `-------------------` \n\n" );
 	
 	for( i = 0; i < 16; i++ )
 	{
-		displayRam[ 24 + i ] = i << 12;
+		displayRam[ i ] = i << 12;
 	}
 
 	k = 0;
@@ -424,12 +444,12 @@ int main()
 	do
 	{
 		
-		screenIndex = 40 * 5;
+		screenIndex = 80 * 15 + 10;
 
-		for( i = 0; i < 40; i++ )
+		for( i = 0; i < 60; i++ )
 		{
 
-			if( k < 40 )
+			if( k < 60 )
 			{
 				if( i <= k )
 				{
@@ -442,7 +462,7 @@ int main()
 			}
 			else
 			{
-				if( i <= ( k - 40 ) )
+				if( i <= ( k - 60 ) )
 				{
 					print( (char*)"\xb0" );
 				}
@@ -457,7 +477,7 @@ int main()
 
 
 		k++;
-		if( k >=80 )
+		if( k >= 120 )
 		{
 			k = 0;
 		}
@@ -469,7 +489,8 @@ int main()
 		}
 
 	}while( uartData != 'S' );
-	print( (char*)"Receiving:'" );
+
+	print( (char*)"\n\nReceiving:'" );
 
 	uartGetS( buf, sizeof( buf ) );
 	//print( buf );

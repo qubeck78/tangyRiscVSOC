@@ -498,6 +498,10 @@ begin
 -- direct memory access clock
     dmaClock            <= clkd2_80;
     
+
+-- leds
+    leds    <= gpoRegister( 7 downto 2 ); 
+
 -- place hdmi pll
 pllHDMIInst:pllHDMI
     port map(
@@ -916,8 +920,15 @@ begin
                 cpuResetGenCounter  <= cpuResetGenCounter - 1;
                 
             else
+                if buttonUser = '1' then
 
-                cpuResetn           <= '1';
+                    cpuResetn           <= '0';
+
+                else
+
+                    cpuResetn           <= '1';
+
+                end if; --buttonUser = '1'
 
             end if;
         end if;
@@ -940,7 +951,7 @@ begin
          --default register values
          vmMode                  <= x"0000";
          dmaDisplayPointerStart  <= ( others => '0' );
-         gpoRegister             <= ( others => '1' );
+         gpoRegister             <= "01111111";             --turn on one LED by default
          
          tickTimerReset             <= '0';
                   
