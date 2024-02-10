@@ -89,6 +89,7 @@ int main()
    print( (char*) "   .-- ((---- ((-------. \n" );
    print( (char*) "   |                   | \n" );
    print( (char*) "   |  RISC-V tangySOC  | \n" );
+   print( (char*) "   |  Bootloader test  | \n" );
    print( (char*) "   |                   | \n" );
    print( (char*) "   `-------------------` \n" );
 

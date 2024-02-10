@@ -11,9 +11,11 @@
         <File path="src/clkdiv5/clkdiv5.vhd" type="file.vhdl" enable="1"/>
         <File path="src/dvi_tx/dvi_tx.vhd" type="file.vhdl" enable="1"/>
         <File path="src/fontProm/fontProm.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/gfxBufRam/gfxBufRam.vhd" type="file.vhdl" enable="1"/>
         <File path="src/pixelGenTxt.vhd" type="file.vhdl" enable="1"/>
         <File path="src/pllHDMI/pllHDMI.vhd" type="file.vhdl" enable="1"/>
         <File path="src/pllSystem/pllSystem.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/sdramController.vhd" type="file.vhdl" enable="1"/>
         <File path="src/systemRam/systemRam.vhd" type="file.vhdl" enable="1"/>
         <File path="src/tangyRiscVSOCTop.vhd" type="file.vhdl" enable="1"/>
         <File path="src/uart.vhd" type="file.vhdl" enable="1"/>

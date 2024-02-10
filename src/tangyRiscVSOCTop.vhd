@@ -124,38 +124,6 @@ component DVI_TX_Top
 	);
 end component; 
 
-
-component SDRAM_controller_top_SIP
-	port (
-		O_sdram_clk: out std_logic;
-		O_sdram_cke: out std_logic;
-		O_sdram_cs_n: out std_logic;
-		O_sdram_cas_n: out std_logic;
-		O_sdram_ras_n: out std_logic;
-		O_sdram_wen_n: out std_logic;
-		O_sdram_dqm: out std_logic_vector(3 downto 0);
-		O_sdram_addr: out std_logic_vector(10 downto 0);
-		O_sdram_ba: out std_logic_vector(1 downto 0);
-		IO_sdram_dq: inout std_logic_vector(31 downto 0);
-		I_sdrc_rst_n: in std_logic;
-		I_sdrc_clk: in std_logic;
-		I_sdram_clk: in std_logic;
-		I_sdrc_selfrefresh: in std_logic;
-		I_sdrc_power_down: in std_logic;
-		I_sdrc_wr_n: in std_logic;
-		I_sdrc_rd_n: in std_logic;
-		I_sdrc_addr: in std_logic_vector(20 downto 0);
-		I_sdrc_data_len: in std_logic_vector(7 downto 0);
-		I_sdrc_dqm: in std_logic_vector(3 downto 0);
-		I_sdrc_data: in std_logic_vector(31 downto 0);
-		O_sdrc_data: out std_logic_vector(31 downto 0);
-		O_sdrc_init_done: out std_logic;
-		O_sdrc_busy_n: out std_logic;
-		O_sdrc_rd_valid: out std_logic;
-		O_sdrc_wrd_ack: out std_logic
-	);
-end component;
-
 -- font rom
 component fontProm
     port (
@@ -287,6 +255,65 @@ component UART
     );
 end component;
 
+-- sdram controller with dma
+component sdramController is
+port(
+
+    reset:      in  std_logic;
+    clock:      in  std_logic;
+    clockSdram: in  std_logic;
+
+    --gfx display mode interface ( ch0 )
+    ch0DmaRequest:       in  std_logic_vector( 1 downto 0 );
+    ch0DmaPointerStart:  in  std_logic_vector( 20 downto 0 );
+    ch0DmaPointerReset:  in  std_logic;
+   
+    ch0BufClk:           in  std_logic;
+    ch0BufDout:          out std_logic_vector( 31 downto 0 );
+    ch0BufA:             in  std_logic_vector( 8 downto 0 );
+   
+   
+    --audio interface ( ch1 )
+   
+    --tbd
+   
+   
+    --blitter interface ( ch2 )
+    ch2DmaRequest: in  std_logic;
+    ch2A:          in  std_logic_vector( 21 downto 0 );
+    ch2Din:        in  std_logic_vector( 31 downto 0 );
+    ch2Dout:       out std_logic_vector( 31 downto 0 );
+    ch2RWn:        in  std_logic;
+    ch2WordSize:   in  std_logic;
+    ch2DataMask:   in  std_logic_vector( 1 downto 0 );
+    ch2Ready:      out std_logic;
+   
+   
+    --cpu interface ( ch3 )
+    a:          in  std_logic_vector( 20 downto 0 );
+    din:        in  std_logic_vector( 31 downto 0 );
+    dout:       out std_logic_vector( 31 downto 0 );
+   
+    ce:         in  std_logic;
+    wr:         in  std_logic;
+    dataMask:   in  std_logic_vector( 3 downto 0 );
+   
+    ready:      out std_logic; 
+   
+   
+    --sdram interface
+    O_sdram_clk:        out std_logic;
+	O_sdram_cke:        out std_logic;
+	O_sdram_cs_n:       out std_logic;
+	O_sdram_cas_n:      out std_logic;
+	O_sdram_ras_n:      out std_logic;
+	O_sdram_wen_n:      out std_logic;
+	O_sdram_dqm:        out std_logic_vector(3 downto 0);
+	O_sdram_addr:       out std_logic_vector(10 downto 0);
+	O_sdram_ba:         out std_logic_vector(1 downto 0);
+	IO_sdram_dq:        inout std_logic_vector(31 downto 0)
+);
+end component;
 
 -- signals
 
@@ -313,32 +340,19 @@ signal resetn:          std_logic;
 signal pllHDMILocked:   std_logic;
 
 -- hdmi encoder
-signal dviClock:       std_logic;
-signal dviVs:          std_logic;
-signal dviHs:          std_logic;
-signal dviDe:          std_logic;
-signal dviR:           std_logic_vector(7 downto 0);
-signal dviG:           std_logic_vector(7 downto 0);
-signal dviB:           std_logic_vector(7 downto 0); 
+signal dviClock:        std_logic;
+signal dviVs:           std_logic;
+signal dviHs:           std_logic;
+signal dviDe:           std_logic;
+signal dviR:            std_logic_vector(7 downto 0);
+signal dviG:            std_logic_vector(7 downto 0);
+signal dviB:            std_logic_vector(7 downto 0); 
 
---sd controller signals
-signal sdrcClk:                     std_logic;
-signal sdramClk:                    std_logic;
-signal sdrcSelfRefresh:             std_logic;
-signal sdrcWrn:                     std_logic;
-signal sdrcRdn:                     std_logic;
-signal sdrcAddr:                    std_logic_vector( 20 downto 0 );
-signal sdrcDataLen:                 std_logic_vector( 7 downto 0 );
-signal sdrcDqm:                     std_logic_vector( 3 downto 0 );
-signal sdrcDataIn:                  std_logic_vector( 31 downto 0 );
-signal sdrcDataOut:                 std_logic_vector( 31 downto 0 );
-signal sdrcInitDone:                std_logic;
-signal sdrcBusyn:                   std_logic;
-signal sdrcRdValid:                 std_logic;
-signal sdrcWrdAck:                  std_logic; 
+--gowin sdram controller signals
+signal sdramClock:      std_logic;
 
 -- video mux signals
-signal   vmMode:  std_logic_vector( 15 downto 0 );
+signal   vmMode:        std_logic_vector( 15 downto 0 );
 
 -- font rom signals
 signal   fontRomA:        std_logic_vector( 10 downto 0 );
@@ -426,8 +440,8 @@ signal   frameTimerReset:        std_logic;
 signal   frameTimerPgPrvVSync:   std_logic;
 signal   frameTimerValue:        std_logic_vector( 31 downto 0 );
 
--- dma process signals
-signal   dmaClock:               std_logic;
+-- dma signals
+signal   sdramDmaClock:          std_logic;
                      
 -- dma ch0 buf ram signals ( for gfx pixel gen )
 signal   gfxBufRamDOut:          std_logic_vector( 31 downto 0 );
@@ -495,9 +509,12 @@ begin
 -- uart clock
     uartClock           <= clkd2_80;
 
--- direct memory access clock
-    dmaClock            <= clkd2_80;
+-- sdram direct memory access clock
+    sdramDmaClock       <= clkd2_80;
     
+-- sdram chip clock
+
+    sdramClock          <= clkd2_80ps;
 
 -- leds
     leds    <= gpoRegister( 7 downto 2 ); 
@@ -556,38 +573,6 @@ DVI_TX_TopInst: DVI_TX_Top
 		O_tmds_clk_n    => O_tmds_clk_n,
 		O_tmds_data_p   => O_tmds_data_p,
 		O_tmds_data_n   => O_tmds_data_n
-	); 
-
--- place sdram controller
-SDRAM_controller_top_SIPInst: SDRAM_controller_top_SIP
-	port map(
-		O_sdram_clk         => O_sdram_clk,
-		O_sdram_cke         => O_sdram_cke,
-		O_sdram_cs_n        => O_sdram_cs_n,
-		O_sdram_cas_n       => O_sdram_cas_n,
-		O_sdram_ras_n       => O_sdram_ras_n,
-		O_sdram_wen_n       => O_sdram_wen_n,
-		O_sdram_dqm         => O_sdram_dqm,
-		O_sdram_addr        => O_sdram_addr,
-		O_sdram_ba          => O_sdram_ba,
-		IO_sdram_dq         => IO_sdram_dq,
-
-		I_sdrc_rst_n        => cpuResetn,
-		I_sdrc_clk          => sdrcClk,
-		I_sdram_clk         => sdramClk,
-		I_sdrc_selfrefresh  => sdrcSelfRefresh,
-		I_sdrc_power_down   => '0',
-		I_sdrc_wr_n         => sdrcWrn,
-		I_sdrc_rd_n         => sdrcRdn,
-		I_sdrc_addr         => sdrcAddr,    
-		I_sdrc_data_len     => sdrcDataLen, 
-		I_sdrc_dqm          => sdrcDqm,     
-		I_sdrc_data         => sdrcDataIn,  
-		O_sdrc_data         => sdrcDataOut, 
-		O_sdrc_init_done    => sdrcInitDone,
-		O_sdrc_busy_n       => sdrcBusyn,
-		O_sdrc_rd_valid     => sdrcRdValid,
-		O_sdrc_wrd_ack      => sdrcWrdAck
 	); 
 
 
@@ -813,21 +798,21 @@ end process;
 -- place picorv32
    
 -- bus signals
-   cpuAOut           <= cpuAOutFull( 31 downto 2 );
+    cpuAOut           <= cpuAOutFull( 31 downto 2 );
 
-   cpuWr             <= cpuWrStrobe( 3 ) or cpuWrStrobe( 2 ) or cpuWrStrobe( 1 ) or cpuWrStrobe( 0 );
+    cpuWr             <= cpuWrStrobe( 3 ) or cpuWrStrobe( 2 ) or cpuWrStrobe( 1 ) or cpuWrStrobe( 0 );
 
-   cpuDataMask       <= cpuWrStrobe when cpuWr = '1' else "1111";
+    cpuDataMask       <= cpuWrStrobe when cpuWr = '1' else "1111";
 
 
 -- chip selects
-   systemRAMCE       <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"000" else
+    systemRAMCE       <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"000" else
                         '0';
 
 --   fastRAMCE         <= '1' when ( cpuMemValid = '1'  ) and cpuAOutFull( 31 downto 24 ) = x"30" else '0';
 --         
---   dmaMemoryCE       <= '1' when ( cpuMemValid = '1'  ) and cpuAOutFull( 31 downto 24 ) = x"20" else '0';
---         
+    dmaMemoryCE       <= '1' when ( cpuMemValid = '1'  ) and cpuAOutFull( 31 downto 24 ) = x"20" else '0';
+         
     registersCE       <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"f00" else '0';
 
 --   fpAluCE           <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"f01" else '0';
@@ -836,16 +821,18 @@ end process;
 
 --   usbHostCE         <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"f03" else '0';
 
-     uartCE            <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"f04" else '0';
+    uartCE            <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"f04" else '0';
 
 --   spiCE             <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"f05" else '0';
 --   
 --   sdramCtrlCE       <= '1' when ( cpuMemValid = '1'  ) and cpuAOutFull( 31 downto 28 ) = x"4" else '0';
 --   
+
 -- bus slaves ready signals mux
    cpuMemReady       <= systemRamReady when systemRAMCE = '1'
                         else uartReady when uartCE = '1' 
                         else '1' when registersCE = '1' 
+                        else cpuDmaReady when dmaMemoryCE = '1' 
                         
                         else '1';
 
@@ -854,7 +841,6 @@ end process;
 --                        else blitterReady when blitterCE = '1' 
 --                        else usbHostReady when usbHostCE = '1' 
 --                        else spiReady when spiCE = '1' 
---                        else cpuDmaReady when dmaMemoryCE = '1' 
 --                        else sdramCtrlSdramReady when sdramCtrlCE = '1' 
 
 
@@ -863,11 +849,11 @@ end process;
    cpuDin            <= systemRamDoutForCPU                       when cpuAOutFull( 31 downto 20 ) = x"000" else 
                         uartDoutForCPU                            when cpuAOutFull( 31 downto 20 ) = x"f04" else
                         registersDoutForCPU                       when cpuAOutFull( 31 downto 20 ) = x"f00" else
+                        dmaDoutForCPU                             when cpuAOutFull( 31 downto 24 ) = x"20"  else
 --                        fpAluDoutForCPU                           when cpuAOutFull( 31 downto 20 ) = x"f01" else
 --                        blitterDoutForCPU                         when cpuAOutFull( 31 downto 20 ) = x"f02" else
 --                        usbHostDoutForCPU                         when cpuAOutFull( 31 downto 20 ) = x"f03" else 
 --                        spiDoutForCPU                             when cpuAOutFull( 31 downto 20 ) = x"f05" else
---                        dmaDoutForCPU                             when cpuAOutFull( 31 downto 24 ) = x"20"  else
 --                        sdramCtrlDataOutForCPU                    when cpuAOutFull( 31 downto 28 ) = x"4"   else
                           x"00000000";
 
@@ -951,7 +937,7 @@ begin
          --default register values
          vmMode                  <= x"0000";
          dmaDisplayPointerStart  <= ( others => '0' );
-         gpoRegister             <= "01111111";             --turn on one LED by default
+         gpoRegister             <= "01111111";             --turn on last LED by default
          
          tickTimerReset             <= '0';
                   
@@ -1092,6 +1078,65 @@ end process;
       uartRXD  => uartRxd
       
     );  
+
+
+-- place sdram dma 
+sdramControllerInst:sdramController
+port map(
+
+    reset                   => reset,
+    clock                   => sdramDmaClock,
+    clockSdram              => sdramClock,
+
+    --gfx display mode interface ( ch0 )
+    ch0DmaRequest           => "00",
+    ch0DmaPointerStart      => ( others => '0' ),
+    ch0DmaPointerReset      => '0',
+   
+    ch0BufClk               => '0',
+    --ch0BufDout              => 
+    ch0BufA                 => ( others => '0' ),
+   
+   
+    --audio interface ( ch1 )
+   
+    --tbd
+   
+   
+    --blitter interface ( ch2 )
+    ch2DmaRequest           => '0',
+    ch2A                    => ( others => '0' ),
+    ch2Din                  => ( others => '0' ),
+    --ch2Dout               =>
+    ch2RWn                  => '1',
+    ch2WordSize             => '0',
+    ch2DataMask             => "11",
+    --ch2Ready              => 
+   
+   
+    --cpu interface ( ch3 )
+    a                       => cpuAOut( 20 downto 0 ),
+    din                     => cpuDOut,
+    dout                    => dmaDoutForCPU,
+    ce                      => dmaMemoryCE,
+    wr                      => cpuWr,
+    dataMask                => cpuDataMask,
+   
+    ready                   => cpuDmaReady,
+   
+    --sdram interface
+    O_sdram_clk             => O_sdram_clk,
+	O_sdram_cke             => O_sdram_cke,
+	O_sdram_cs_n            => O_sdram_cs_n,
+	O_sdram_cas_n           => O_sdram_cas_n,
+	O_sdram_ras_n           => O_sdram_ras_n,
+	O_sdram_wen_n           => O_sdram_wen_n,
+	O_sdram_dqm             => O_sdram_dqm,
+	O_sdram_addr            => O_sdram_addr,
+	O_sdram_ba              => O_sdram_ba,
+	IO_sdram_dq             => IO_sdram_dq
+
+);
 
 
 
