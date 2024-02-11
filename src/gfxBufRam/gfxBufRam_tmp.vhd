@@ -5,12 +5,12 @@
 --Part Number: GW2AR-LV18QN88C8/I7
 --Device: GW2AR-18
 --Device Version: C
---Created Time: Fri Feb  9 23:40:12 2024
+--Created Time: Sat Feb 10 10:10:20 2024
 
 --Change the instance name and port connections to the signal names
 ----------Copy here to design--------
 
-component systemRam
+component gfxBufRam
     port (
         douta: out std_logic_vector(31 downto 0);
         doutb: out std_logic_vector(31 downto 0);
@@ -24,14 +24,14 @@ component systemRam
         ceb: in std_logic;
         resetb: in std_logic;
         wreb: in std_logic;
-        ada: in std_logic_vector(12 downto 0);
+        ada: in std_logic_vector(8 downto 0);
         dina: in std_logic_vector(31 downto 0);
-        adb: in std_logic_vector(12 downto 0);
+        adb: in std_logic_vector(8 downto 0);
         dinb: in std_logic_vector(31 downto 0)
     );
 end component;
 
-your_instance_name: systemRam
+your_instance_name: gfxBufRam
     port map (
         douta => douta_o,
         doutb => doutb_o,
