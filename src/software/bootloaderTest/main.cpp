@@ -6,10 +6,12 @@
 
 BSP_T             *bsp     = ( BSP_T *)            0xf0000000; //registers base address 
 
-#define TEXTATTR 0x3f00
 
-unsigned short *displayRam;
-int screenIndex;
+ushort   textAttr;
+
+ushort   *displayRam;
+int       screenIndex;
+ushort   *gfxRam;
 
 char buf[128];
 
@@ -53,7 +55,7 @@ int print( char *buf )
       }
       else
       {
-         displayRam[ screenIndex++ ] = TEXTATTR | c;
+         displayRam[ screenIndex++ ] = textAttr | c;
       }
    }
 
@@ -68,19 +70,26 @@ int main()
    int            k;
 
    
-   //80 column txt mode only
-   bsp->videoMuxMode = 0x04; 
+   bsp->videoMuxMode             = _VIDEOMODE_320_TEXT80_OVER_GFX; 
+   bsp->dmaDisplayPointerStart   = 0x0;
 
-   displayRam = ( unsigned short * )0x6d40;
-   
+   displayRam  = ( ushort* )0x6d40;
+   gfxRam      = ( ushort* )0x20000000;
    screenIndex = 0;  
 
    
    
    for( i = 0; i < 2400 ; i++ )
    {
-     displayRam[i] = TEXTATTR;
+     displayRam[i] = 0;
    }
+
+   for( i = 0; i < 320 * 240; i++ )
+   {
+      gfxRam[i] = 0x0000;
+   }
+
+   textAttr = 0x8f00;
 
    print( (char*) "\n" );   
    print( (char*) "        |.\\__/.|    (~\\ \n" );
@@ -137,14 +146,19 @@ int main()
       }
 
    
-      for( j = 0; j < 10000; j++ );
+      //for( j = 0; j < 10000; j++ );
 
       if( k == 0 )
       {
          for( i = 1200; i < 2400 ; i++ )
          {
-            displayRam[i] = randomNumber();
+            displayRam[i]  = randomNumber();
          }
+      }
+
+      for( i = 320 * 80; i < 320 * 120 ; i++ )
+      {
+         gfxRam[i] = randomNumber();
       }
 
    }while( 1 );
