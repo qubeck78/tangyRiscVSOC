@@ -1,6 +1,6 @@
 
 AS = riscv-none-embed-as -march=rv32im 
-CC = riscv-none-embed-gcc -march=rv32im -O3 -c 
+CC = riscv-none-embed-gcc -march=rv32im -O2 -c 
 LD = riscv-none-embed-ld -T ram.ld
 OBJCOPY = riscv-none-embed-objcopy
 OBJDUMP = riscv-none-embed-objdump 
