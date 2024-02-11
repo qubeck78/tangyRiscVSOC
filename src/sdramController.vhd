@@ -142,7 +142,7 @@ signal sdrcWrdAck:                  std_logic;
 
 
 type  dmaState_T is ( dmaIdle, dmaGfxFetch0, dmaGfxFetch1, dmaGfxFetch2, dmaGfxFetch3, dmaGfxFetch4, dmaGfxFetch5,
-                     dmaCpuWrite0, dmaCpuWrite1, dmaCpuWrite2, 
+                     dmaCpuWrite0, dmaCpuWrite1, dmaCpuWrite2, dmaCpuWrite3,
                      dmaCpuRead0, dmaCpuRead1, dmaCpuRead2, dmaCpuRead3, dmaCpuRead4,
                      dmaCh2Write0, dmaCh2Write1, dmaCh2Write2,  
                      dmaCh2Read0, dmaCh2Read1, dmaCh2Read2,
@@ -236,7 +236,7 @@ begin
             sdrcWrn         <= '1';
             sdrcRdn         <= '1';
             sdrcAddr        <= ( others => '0' );
-            sdrcDataLen     <= x"01";
+            sdrcDataLen     <= x"00";
             sdrcDqm         <= "0000";
             sdrcDataIn      <= ( others => '0' );
             sdrcSelfRefresh <= '0';
@@ -290,6 +290,112 @@ begin
      
             when dmaIdle =>
 
+                --hold cpu
+                ready   <= '0';
+
+
+                --ch3 - cpu
+                if ce = '1' then
+                
+                    if sdrcBusyn = '1' then
+
+                        --common signals
+                        sdrcAddr    <= a( 20 downto 0 );
+
+                        if wr = '1' then
+                        
+                            --write
+
+                            sdrcDataIn  <= din;
+                            
+                            sdrcDqm( 0 ) <= not dataMask( 0 );
+                            sdrcDqm( 1 ) <= not dataMask( 1 );
+                            sdrcDqm( 2 ) <= not dataMask( 2 );
+                            sdrcDqm( 3 ) <= not dataMask( 3 );
+
+                            dmaState    <= dmaCpuWrite0;
+
+                        else
+
+                            --read
+
+                            sdrcDqm     <= "0000";
+                            dmaState    <= dmaCpuRead0;
+
+                        end if; --wr = '1' or '0'
+
+                    end if; --sdrcBusyn = '1'
+                
+                end if; --ce = '1'
+
+
+            when dmaCpuRead0 =>
+
+                sdrcRdn     <= '0';
+                dmaState    <= dmaCpuRead1;
+
+            when dmaCpuRead1 =>
+                    
+                if sdrcWrdAck = '1' then
+
+                    sdrcRdn <= '1';
+
+                end if;
+
+                if sdrcRdValid = '1' then
+
+                    dmaState    <= dmaCpuRead2;
+                        
+                    dout        <= sdrcDataOut;
+
+                end if;
+
+            when dmaCpuRead2 =>
+
+                dmaState    <= dmaCpuRead3;
+
+            when dmaCpuRead3 =>
+
+                ready <= '1';
+
+                if ce = '0' then
+
+                    ready       <= '0';
+                    dmaState    <= dmaIdle;
+
+                end if;
+            
+            when dmaCpuWrite0 =>
+
+                sdrcWrn     <= '0';
+                dmaState    <= dmaCpuWrite1;
+                
+
+            when dmaCpuWrite1 =>
+
+                if sdrcWrdAck = '1' then
+                        
+                    sdrcWrn <= '1';
+
+                    dmaState    <= dmaCpuWrite2;
+
+                end if;
+
+            when dmaCpuWrite2 =>
+
+                 dmaState    <= dmaCpuWrite3;
+
+            when dmaCpuWrite3 =>
+
+
+                ready <= '1';
+                    
+                if ce = '0' then
+            
+                    ready       <= '0';
+                    dmaState    <= dmaIdle;
+
+                end if;
 
             when others =>
 
