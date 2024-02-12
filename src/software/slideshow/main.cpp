@@ -176,7 +176,7 @@ int slideshow()
                         {
                             delayMs( 100 );
                                             
-                            /*if( !osGetUIEvent( &event ) )
+                            if( !osGetUIEvent( &event ) )
                             { 
                                 if( event.type == OS_EVENT_TYPE_KEYBOARD_KEYPRESS )
                                 {
@@ -229,7 +229,7 @@ int slideshow()
                                     }
                                 }
 
-                            }*/
+                            }
                         }
                     }
                 }
