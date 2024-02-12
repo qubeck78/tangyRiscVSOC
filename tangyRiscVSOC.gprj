@@ -12,6 +12,7 @@
         <File path="src/dvi_tx/dvi_tx.vhd" type="file.vhdl" enable="1"/>
         <File path="src/fontProm/fontProm.vhd" type="file.vhdl" enable="1"/>
         <File path="src/gfxBufRam/gfxBufRam.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/pixelGenGfx.vhd" type="file.vhdl" enable="1"/>
         <File path="src/pixelGenTxt.vhd" type="file.vhdl" enable="1"/>
         <File path="src/pllHDMI/pllHDMI.vhd" type="file.vhdl" enable="1"/>
         <File path="src/pllSystem/pllSystem.vhd" type="file.vhdl" enable="1"/>

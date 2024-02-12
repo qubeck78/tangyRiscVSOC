@@ -293,9 +293,24 @@ begin
                 --hold cpu
                 ready   <= '0';
 
+               --ch0 request 0 ( buffer, lower part )
+               if ch0DmaRequestLatched( 0 ) = '1' then
+               
+                  ch0DmaBufPointer     <= "000000000";
+                  ch0TransferCounter   <= x"a0";      --160 long words
+                  
+                  dmaState <= dmaGfxFetch0;
+                  
+               --ch0 request 0 ( buffer, upper part )
+               elsif ch0DmaRequestLatched( 1 ) = '1' then
+               
+                  ch0DmaBufPointer     <= "100000000";
+                  ch0TransferCounter   <= x"a0";      --160 long words
+                  
+                  dmaState <= dmaGfxFetch0;
 
                 --ch3 - cpu
-                if ce = '1' then
+                elsif ce = '1' then
                 
                     if sdrcBusyn = '1' then
 
@@ -327,6 +342,68 @@ begin
                     end if; --sdrcBusyn = '1'
                 
                 end if; --ce = '1'
+
+
+            --ch0 pixelGenGfx buffer fetch ( 160 32-bit words )
+            when dmaGfxFetch0 =>
+
+                if sdrcBusyn = '1' then
+                    
+                    sdrcAddr    <= ch0DmaPointer( 20 downto 0 );
+                    sdrcDqm     <= "0000";
+
+                    ch0BufRamWe				<= '0';
+                    ch0BufRamWrA			<= ch0DmaBufPointer;
+
+                    ch0TransferCounter		<= ch0TransferCounter - 1;
+                    ch0DmaPointer		    <= ch0DmaPointer + 1;
+                    ch0DmaBufPointer	    <= ch0DmaBufPointer + 1;
+
+                    dmaState    <= dmaGfxFetch1;
+
+                end if;
+
+            when dmaGfxFetch1 =>
+
+                sdrcRdn     <= '0';
+                dmaState    <= dmaGfxFetch2;
+
+            when dmaGfxFetch2 =>
+
+                if sdrcWrdAck = '1' then
+
+                    sdrcRdn <= '1';
+
+                end if;
+
+                if sdrcRdValid = '1' then
+
+                    dmaState    <= dmaGfxFetch3;
+
+                end if;
+
+            when dmaGfxFetch3 =>
+
+                ch0BufRamDIn    <= sdrcDataOut;
+                ch0BufRamWe     <= '1';
+
+                if ch0TransferCounter = x"00" then
+                    
+                    dmaState                    <= dmaGfxFetch4;
+                    ch0DmaRequestLatched( 0 )   <= '0';
+                    ch0DmaRequestLatched( 1 )   <= '0';
+
+                else
+            
+                    dmaState    <= dmaGfxFetch0;
+
+                end if;
+
+            when dmaGfxFetch4 =>
+
+                ch0BufRamWe <= '0';
+
+                dmaState    <= dmaIdle;
 
 
             when dmaCpuRead0 =>

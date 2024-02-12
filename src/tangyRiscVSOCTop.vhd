@@ -18,7 +18,6 @@ port(
     --onboard osc 27
     oscClock27:         in std_logic;   -- pin 4
 
-    
 	--reset
     buttonReset:        in std_logic;   -- high active
 
@@ -31,7 +30,6 @@ port(
     --rgb led
     rgbLedDout:         out std_logic;
 
-
     --hdmi
     O_tmds_clk_p:       out std_logic;
     O_tmds_clk_n:       out std_logic;
@@ -41,7 +39,6 @@ port(
     dviCEC:             inout std_logic;
     dviEdidClk:         inout std_logic;
     dviEdidDat:         inout std_logic;
-
 	
 	--ext uart
 	extUartTx:	        out std_logic;
@@ -166,6 +163,37 @@ component pixelGenTxt
     );
 end component;
 
+-- gfx pixel gen
+component pixelGenGfx is
+port(
+   reset:            in  std_logic;
+   pggClock:         in  std_logic;
+   pggR:             out std_logic_vector( 7 downto 0 );
+   pggG:             out std_logic_vector( 7 downto 0 );
+   pggB:             out std_logic_vector( 7 downto 0 );
+
+    --gfx buffer ram
+   gfxBufRamDOut:    in  std_logic_vector( 31 downto 0 );
+   gfxBufRamRdA:     out std_logic_vector( 8 downto 0 );
+
+   --2 dma requests
+   pggDMARequest:    out std_logic_vector( 1 downto 0 );
+   
+   --sync gen outputs
+   pgVSync:          in  std_logic;
+   pgHSync:          in  std_logic;
+   pgDe:             in  std_logic;
+   pgXCount:         in  std_logic_vector( 11 downto 0 );
+   pgYCount:         in  std_logic_vector( 11 downto 0 );
+   pgDeX:            in  std_logic;
+   pgDeY:            in  std_logic;
+   pgPreFetchLine:   in  std_logic;
+   pgFetchEnable:    in  std_logic;
+
+   pgVideoMode:      in  std_logic_vector( 1 downto 0 )
+
+   );
+end component;
 
 component systemRam
     port (
@@ -618,6 +646,37 @@ port map(
         
 );   
 
+-- place gfx pixel gen
+
+   pixelGenGfxInst: pixelGenGfx
+   port map(
+      reset             => reset,
+      pggClock          => pgClock,
+      
+      pggR              => pggR,
+      pggG              => pggG,
+      pggB              => pggB,
+
+      --gfx buffer ram
+      gfxBufRamDOut     => gfxBufRamDOut,
+      gfxBufRamRdA      => gfxBufRamRdA,
+   
+      --2 dma requests
+      pggDMARequest     => pggDMARequest,
+
+      --sync gen outputs
+      pgVSync           => pgVSync,
+      pgHSync           => pgHSync,
+      pgDe              => pgDe,
+      pgXCount          => pgXCount,
+      pgYCount          => pgYCount,
+      pgDeX             => pgDeX,
+      pgDeY             => pgDeY,
+      pgPreFetchLine    => pgPreFetchLine,
+      pgFetchEnable     => pgFetchEnable,
+      
+      pgVideoMode       => vmMode( 5 downto 4 )
+   );
 
 --place system ram
 
@@ -1089,13 +1148,13 @@ port map(
     clockSdram              => sdramClock,
 
     --gfx display mode interface ( ch0 )
-    ch0DmaRequest           => "00",
-    ch0DmaPointerStart      => ( others => '0' ),
-    ch0DmaPointerReset      => '0',
+    ch0DmaRequest           => pggDMARequest,
+    ch0DmaPointerStart      => dmaDisplayPointerStart,
+    ch0DmaPointerReset      => pgVSync,
    
-    ch0BufClk               => '0',
-    --ch0BufDout              => 
-    ch0BufA                 => ( others => '0' ),
+    ch0BufClk               => not pgClock,
+    ch0BufDout              => gfxBufRamDOut,
+    ch0BufA                 => gfxBufRamRdA,
    
    
     --audio interface ( ch1 )
