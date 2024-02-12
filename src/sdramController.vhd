@@ -142,8 +142,8 @@ signal sdrcWrdAck:                  std_logic;
 
 
 type  dmaState_T is ( dmaIdle, dmaGfxFetch0, dmaGfxFetch1, dmaGfxFetch2, dmaGfxFetch3, dmaGfxFetch4, dmaGfxFetch5,
-                     dmaCpuWrite0, dmaCpuWrite1, dmaCpuWrite2, dmaCpuWrite3,
-                     dmaCpuRead0, dmaCpuRead1, dmaCpuRead2, dmaCpuRead3, dmaCpuRead4,
+                     dmaCpuWrite0, dmaCpuWrite1, 
+                     dmaCpuRead0, dmaCpuRead1, 
                      dmaCh2Write0, dmaCh2Write1, dmaCh2Write2,  
                      dmaCh2Read0, dmaCh2Read1, dmaCh2Read2,
                      dmaCh2Write32_0, dmaCh2Write32_1, dmaCh2Write32_2, 
@@ -328,11 +328,15 @@ begin
                             sdrcDqm( 2 ) <= not dataMask( 2 );
                             sdrcDqm( 3 ) <= not dataMask( 3 );
 
+                            sdrcWrn     <= '0';
+
                             dmaState    <= dmaCpuWrite0;
 
                         else
 
                             --read
+
+                            sdrcRdn     <= '0';
 
                             sdrcDqm     <= "0000";
                             dmaState    <= dmaCpuRead0;
@@ -349,8 +353,8 @@ begin
 
                 if sdrcBusyn = '1' then
                     
-                    sdrcAddr    <= ch0DmaPointer( 20 downto 0 );
-                    sdrcDqm     <= "0000";
+                    sdrcAddr                <= ch0DmaPointer( 20 downto 0 );
+                    sdrcDqm                 <= "0000";
 
                     ch0BufRamWe				<= '0';
                     ch0BufRamWrA			<= ch0DmaBufPointer;
@@ -359,16 +363,13 @@ begin
                     ch0DmaPointer		    <= ch0DmaPointer + 1;
                     ch0DmaBufPointer	    <= ch0DmaBufPointer + 1;
 
-                    dmaState    <= dmaGfxFetch1;
+                    sdrcRdn                 <= '0';
+
+                    dmaState                <= dmaGfxFetch1;
 
                 end if;
 
             when dmaGfxFetch1 =>
-
-                sdrcRdn     <= '0';
-                dmaState    <= dmaGfxFetch2;
-
-            when dmaGfxFetch2 =>
 
                 if sdrcWrdAck = '1' then
 
@@ -378,18 +379,20 @@ begin
 
                 if sdrcRdValid = '1' then
 
-                    dmaState    <= dmaGfxFetch3;
+                    dmaState    <= dmaGfxFetch2;
 
                 end if;
 
-            when dmaGfxFetch3 =>
+            when dmaGfxFetch2 =>
+
+                sdrcRdn <= '1';
 
                 ch0BufRamDIn    <= sdrcDataOut;
                 ch0BufRamWe     <= '1';
 
                 if ch0TransferCounter = x"00" then
                     
-                    dmaState                    <= dmaGfxFetch4;
+                    dmaState                    <= dmaGfxFetch3;
                     ch0DmaRequestLatched( 0 )   <= '0';
                     ch0DmaRequestLatched( 1 )   <= '0';
 
@@ -399,7 +402,7 @@ begin
 
                 end if;
 
-            when dmaGfxFetch4 =>
+            when dmaGfxFetch3 =>
 
                 ch0BufRamWe <= '0';
 
@@ -408,11 +411,6 @@ begin
 
             when dmaCpuRead0 =>
 
-                sdrcRdn     <= '0';
-                dmaState    <= dmaCpuRead1;
-
-            when dmaCpuRead1 =>
-                    
                 if sdrcWrdAck = '1' then
 
                     sdrcRdn <= '1';
@@ -421,19 +419,17 @@ begin
 
                 if sdrcRdValid = '1' then
 
-                    dmaState    <= dmaCpuRead2;
+                    dmaState    <= dmaCpuRead1;
                         
                     dout        <= sdrcDataOut;
 
                 end if;
 
-            when dmaCpuRead2 =>
-
-                dmaState    <= dmaCpuRead3;
-
-            when dmaCpuRead3 =>
+            when dmaCpuRead1 =>
 
                 ready <= '1';
+
+                sdrcRdn <= '1';
 
                 if ce = '0' then
 
@@ -441,31 +437,22 @@ begin
                     dmaState    <= dmaIdle;
 
                 end if;
-            
+
+                    
             when dmaCpuWrite0 =>
-
-                sdrcWrn     <= '0';
-                dmaState    <= dmaCpuWrite1;
-                
-
-            when dmaCpuWrite1 =>
 
                 if sdrcWrdAck = '1' then
                         
                     sdrcWrn <= '1';
 
-                    dmaState    <= dmaCpuWrite2;
+                    dmaState    <= dmaCpuWrite1;
 
                 end if;
 
-            when dmaCpuWrite2 =>
+            when dmaCpuWrite1 =>
 
-                 dmaState    <= dmaCpuWrite3;
-
-            when dmaCpuWrite3 =>
-
-
-                ready <= '1';
+                sdrcWrn <= '1';
+                ready   <= '1';
                     
                 if ce = '0' then
             

@@ -1,0 +1,35 @@
+[General]
+ipc_version=4
+file=keyboardFifo
+module=keyboardFifo
+target_device=gw2ar18c-000
+type=fifo_hs
+version=1.0
+
+[Config]
+AlmostEmptyFlag=false
+AlmostEmptyFlagItem=Empty_Single Threshold Constant Parameter
+AlmostFullFlag=false
+AlmostFullFlagItem=Full_Single Threshold Constant Parameter
+BSRAM=false
+ControlledByRdEn=false
+ECCSelected=false
+EmptyClear=1
+EmptySet=1
+EnReset=false
+FirstWordFallThrough=true
+FullClear=1
+FullSet=1
+LANG=1
+OutputRegistersSelected=false
+REG=false
+ReadDataNum=false
+ReadDataWidth=32
+ReadDepth=32
+ResetSynchronization=false
+SSRAM=true
+StandardFIFO=false
+Synthesis_tool=GowinSynthesis
+WriteDataNum=false
+WriteDataWidth=32
+WriteDepth=32

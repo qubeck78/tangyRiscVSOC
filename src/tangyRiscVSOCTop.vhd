@@ -309,6 +309,32 @@ port(
 );
 end component;
 
+-- usb host
+component usbHost is
+port(
+
+   --cpu interface
+   reset:            in    std_logic;
+   clock:            in    std_logic;
+   a:                in    std_logic_vector( 15 downto 0 );
+   din:              in    std_logic_vector( 31 downto 0 );
+   dout:             out   std_logic_vector( 31 downto 0 );
+   
+   ce:               in    std_logic;
+   wr:               in    std_logic;
+   dataMask:         in    std_logic_vector( 3 downto 0 );
+   
+   ready:            out   std_logic;
+   
+   --usb phy clock (12MHz)
+   usbHClk:          in    std_logic;
+   
+   --usb host interfaces
+   usbH0Dp:          inout std_logic;     
+   usbH0Dm:          inout std_logic      
+
+);
+end component;
 
 -- sdram controller with dma
 component sdramController is
@@ -539,6 +565,15 @@ signal   spiSClk:          std_logic;
 signal   spiMOSI:          std_logic;
 signal   spiMISO:          std_logic;
 
+-- usb host signals
+signal   usbHostClock:           std_logic;
+signal   usbHostCE:              std_logic;
+signal   usbHostReady:           std_logic;
+signal   usbHostDoutForCPU:      std_logic_vector( 31 downto 0 );
+
+-- usb phy clock ( 12 MHz )
+signal   usbHClk:                std_logic;
+
 begin
 
 
@@ -583,6 +618,12 @@ begin
 -- sdram chip clock
 
     sdramClock          <= clkd2_80ps;
+
+-- usb host clock
+    usbHostClock         <= clkd2_80;
+
+--usb phy clock ( 12MHz )
+    usbHClk              <= extPllClock12;
 
 -- leds
     leds    <= gpoRegister( 7 downto 2 ); 
@@ -917,8 +958,8 @@ end process;
 --   fpAluCE           <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"f01" else '0';
 --   
 --   blitterCE         <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"f02" else '0';
-
---   usbHostCE         <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"f03" else '0';
+    
+    usbHostCE         <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"f03" else '0';
 
     uartCE            <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"f04" else '0';
 
@@ -932,6 +973,7 @@ end process;
    cpuMemReady       <= systemRamReady when systemRAMCE = '1'
                         else uartReady when uartCE = '1' 
                         else spiReady when spiCE = '1' 
+                        else usbHostReady when usbHostCE = '1' 
                         else '1' when registersCE = '1' 
                         else cpuDmaReady when dmaMemoryCE = '1' 
                         
@@ -940,7 +982,6 @@ end process;
 
 --                        else fpAluReady when fpAluCE = '1' 
 --                        else blitterReady when blitterCE = '1' 
---                        else usbHostReady when usbHostCE = '1' 
 --                        else sdramCtrlSdramReady when sdramCtrlCE = '1' 
 
 
@@ -949,12 +990,14 @@ end process;
    cpuDin            <= systemRamDoutForCPU                       when cpuAOutFull( 31 downto 20 ) = x"000" else 
                         uartDoutForCPU                            when cpuAOutFull( 31 downto 20 ) = x"f04" else
                         spiDoutForCPU                             when cpuAOutFull( 31 downto 20 ) = x"f05" else
+                        usbHostDoutForCPU                         when cpuAOutFull( 31 downto 20 ) = x"f03" else 
                         registersDoutForCPU                       when cpuAOutFull( 31 downto 20 ) = x"f00" else
                         dmaDoutForCPU                             when cpuAOutFull( 31 downto 24 ) = x"20"  else
+
 --                        fpAluDoutForCPU                           when cpuAOutFull( 31 downto 20 ) = x"f01" else
 --                        blitterDoutForCPU                         when cpuAOutFull( 31 downto 20 ) = x"f02" else
---                        usbHostDoutForCPU                         when cpuAOutFull( 31 downto 20 ) = x"f03" else 
 --                        sdramCtrlDataOutForCPU                    when cpuAOutFull( 31 downto 28 ) = x"4"   else
+
                           x"00000000";
 
                      
@@ -1212,6 +1255,33 @@ port map(
    mosi        => spiMOSI,
    miso        => spiMISO
    
+);
+
+
+-- place usb host
+usbHostInst: usbHost
+port map(
+
+  --cpu interface
+  reset          => reset,
+  clock          => usbHostClock,
+  a              => cpuAOut( 15 downto 0 ),
+  din            => cpuDOut,
+  dout           => usbHostDoutForCpu,
+  
+  ce             => usbHostCE,
+  wr             => cpuWr,
+  dataMask       => cpuDataMask,
+  
+  ready          => usbHostReady,
+  
+  --usb phy clock (12MHz)
+  usbHClk        => usbHClk,
+  
+  --usb interfaces
+  usbH0Dp        => usbhDp,
+  usbH0Dm        => usbhDm   
+
 );
 
 -- place sdram dma 
