@@ -10,8 +10,7 @@
 //#define _GFXLIB_BIG_ENDIAN
 
 #define _GFXLIB_RISCV_FATFS
-#define _GFXLIB_HW_BLITTER_2D
-
+//#define _GFXLIB_HW_BLITTER_2D
 
 
 typedef unsigned char	uchar;
