@@ -283,6 +283,33 @@ component UART
     );
 end component;
 
+-- SPI
+component SPI is
+port(
+
+   --cpu interface
+   reset:      in  std_logic;
+   clock:      in  std_logic;
+
+   a:          in    std_logic_vector( 15 downto 0 );
+   din:        in    std_logic_vector( 31 downto 0 );
+   dout:       out   std_logic_vector( 31 downto 0 );
+   
+   ce:         in    std_logic;
+   wr:         in    std_logic;
+   dataMask:   in    std_logic_vector( 3 downto 0 );
+   
+   ready:      out   std_logic;
+   
+   --spi interface
+   sclk:       out std_logic;
+   mosi:       out std_logic;
+   miso:       in  std_logic
+   
+);
+end component;
+
+
 -- sdram controller with dma
 component sdramController is
 port(
@@ -502,6 +529,16 @@ signal   uartReady:           std_logic;
 signal   uartTxd:             std_logic;
 signal   uartRxd:             std_logic;
 
+-- SPI signals
+signal   spiClock:         std_logic;
+signal   spiCE:            std_logic;
+signal   spiDoutForCPU:    std_logic_vector( 31 downto 0 );
+signal   spiReady:         std_logic;
+
+signal   spiSClk:          std_logic;
+signal   spiMOSI:          std_logic;
+signal   spiMISO:          std_logic;
+
 begin
 
 
@@ -536,6 +573,9 @@ begin
 
 -- uart clock
     uartClock           <= clkd2_80;
+
+-- spi clock
+    spiClock            <= clkd2_40;
 
 -- sdram direct memory access clock
     sdramDmaClock       <= clkd2_80;
@@ -882,7 +922,8 @@ end process;
 
     uartCE            <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"f04" else '0';
 
---   spiCE             <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"f05" else '0';
+    spiCE             <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"f05" else '0';
+
 --   
 --   sdramCtrlCE       <= '1' when ( cpuMemValid = '1'  ) and cpuAOutFull( 31 downto 28 ) = x"4" else '0';
 --   
@@ -890,6 +931,7 @@ end process;
 -- bus slaves ready signals mux
    cpuMemReady       <= systemRamReady when systemRAMCE = '1'
                         else uartReady when uartCE = '1' 
+                        else spiReady when spiCE = '1' 
                         else '1' when registersCE = '1' 
                         else cpuDmaReady when dmaMemoryCE = '1' 
                         
@@ -899,7 +941,6 @@ end process;
 --                        else fpAluReady when fpAluCE = '1' 
 --                        else blitterReady when blitterCE = '1' 
 --                        else usbHostReady when usbHostCE = '1' 
---                        else spiReady when spiCE = '1' 
 --                        else sdramCtrlSdramReady when sdramCtrlCE = '1' 
 
 
@@ -907,12 +948,12 @@ end process;
 -- bus slaves data outputs mux
    cpuDin            <= systemRamDoutForCPU                       when cpuAOutFull( 31 downto 20 ) = x"000" else 
                         uartDoutForCPU                            when cpuAOutFull( 31 downto 20 ) = x"f04" else
+                        spiDoutForCPU                             when cpuAOutFull( 31 downto 20 ) = x"f05" else
                         registersDoutForCPU                       when cpuAOutFull( 31 downto 20 ) = x"f00" else
                         dmaDoutForCPU                             when cpuAOutFull( 31 downto 24 ) = x"20"  else
 --                        fpAluDoutForCPU                           when cpuAOutFull( 31 downto 20 ) = x"f01" else
 --                        blitterDoutForCPU                         when cpuAOutFull( 31 downto 20 ) = x"f02" else
 --                        usbHostDoutForCPU                         when cpuAOutFull( 31 downto 20 ) = x"f03" else 
---                        spiDoutForCPU                             when cpuAOutFull( 31 downto 20 ) = x"f05" else
 --                        sdramCtrlDataOutForCPU                    when cpuAOutFull( 31 downto 28 ) = x"4"   else
                           x"00000000";
 
@@ -1138,6 +1179,40 @@ end process;
       
     );  
 
+-- place SPI   
+   
+   sdMciClk    <= spiSClk;
+   sdMciDat(3) <= gpoRegister( 0 ); --cs
+   sdMciCmd    <= spiMOSI;
+   spiMISO     <= sdMciDat( 0 );
+
+
+   sdMciDat(2 downto 0 )   <= "ZZZ";
+
+   
+SPIInst:SPI
+port map(
+
+   --cpu interface
+   reset       => reset,
+   clock       => spiClock,
+
+   a           => cpuAOut( 15 downto 0 ),
+   din         => cpuDOut,
+   dout        => spiDoutForCPU,
+   
+   ce          => spiCE,
+   wr          => cpuWr,
+   dataMask    => cpuDataMask,
+   
+   ready       => spiReady,
+   
+   --spi interface
+   sclk        => spiSClk,
+   mosi        => spiMOSI,
+   miso        => spiMISO
+   
+);
 
 -- place sdram dma 
 sdramControllerInst:sdramController
@@ -1299,7 +1374,7 @@ if rising_edge( pgClock ) then
                 dviDe       <= pgDe;
                 
                 dviR		<= pgR( 7 downto 3 ) & "000";
-                dviG        <= pgG( 7 downto 3 ) & "000";
+                dviG        <= pgG( 7 downto 2 ) & "00";
                 dviB        <= pgB( 7 downto 3 ) & "000";
             
             --gfx mode
@@ -1310,7 +1385,7 @@ if rising_edge( pgClock ) then
                 dviDe       <= pgDe;
                 
                 dviR		<= pggR( 7 downto 3 ) & "000";
-                dviG        <= pggG( 7 downto 3 ) & "000";
+                dviG        <= pggG( 7 downto 2 ) & "00";
                 dviB        <= pggB( 7 downto 3 ) & "000";
 
             --text over gfx mode
@@ -1323,20 +1398,20 @@ if rising_edge( pgClock ) then
                 if	pgR = x"00" and pgG = x"00" and pgB = x"00" then
                     
                     dviR    <= pggR( 7 downto 3 ) & "000";
-                    dviG    <= pggG( 7 downto 3 ) & "000";
+                    dviG    <= pggG( 7 downto 2 ) & "00";
                     dviB    <= pggB( 7 downto 3 ) & "000";
                     
                 --gray color -> dim background
                 elsif pgR = x"80" and pgG = x"80" and pgB = x"80" then
             
                     dviR    <= "0" & pggR( 7 downto 4 ) & "000";
-                    dviG    <= "0" & pggG( 7 downto 4 ) & "000";
+                    dviG    <= "0" & pggG( 7 downto 2 ) & "0";
                     dviB    <= "0" & pggB( 7 downto 4 ) & "000";
                     
                 else
 
                     dviR    <= pgR( 7 downto 3 ) & "000";
-                    dviG    <= pgG( 7 downto 3 ) & "000";
+                    dviG    <= pgG( 7 downto 2 ) & "00";
                     dviB    <= pgB( 7 downto 3 ) & "000";
                 
                 end if;
@@ -1352,13 +1427,13 @@ if rising_edge( pgClock ) then
                 if	pggR = x"00" and pggG = x"00" and pggB = x"00" then
                     
                     dviR    <= pgR( 7 downto 3 ) & "000";
-                    dviG    <= pgG( 7 downto 3 ) & "000";
+                    dviG    <= pgG( 7 downto 2 ) & "00";
                     dviB    <= pgB( 7 downto 3 ) & "000";
                     
                 else
 
                     dviR    <= pggR( 7 downto 3 ) & "000";
-                    dviG    <= pggG( 7 downto 3 ) & "000";
+                    dviG    <= pggG( 7 downto 2 ) & "00";
                     dviB    <= pggB( 7 downto 3 ) & "000";
                     
                 end if;

@@ -107,6 +107,19 @@ int main()
    print( (char*) "|""  320x240 w/text   ""|\n" );
    print( (char*) "`-------------------`\n" );
 
+   screenIndex = 80 * 4 + 40;
+   textAttr = 0x0f00;
+   print( (char*) "   Text without background  " );
+
+   screenIndex = 80 * 5 + 40;
+   textAttr = 0x8f00;
+   print( (char*) " Text with shaded background " );
+
+   screenIndex = 80 * 6 + 40;
+   textAttr = 0x7f00;
+   print( (char*) "    Text with background     " );
+
+
    textAttr = 0x8f00;
 
    k = 0;
