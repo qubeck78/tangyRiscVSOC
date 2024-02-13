@@ -15,7 +15,7 @@ ulong gfDisplayBitmap( tgfBitmap *bmp )
 	
 	#if defined( _GFXLIB_RISCV_FATFS )
 	
-	bsp->dmaDisplayPointerStart = ( ulong )( ( ulong )bmp->buffer - _SYSTEM_MEMORY_BASE ) / 4; 
+	bsp->dmaDisplayPointerStart = ( ulong )( ( ulong )bmp->buffer - _SYSTEM_MEMORY_BASE ) / 4;
 	
 	#endif
 

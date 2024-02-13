@@ -140,7 +140,7 @@ int slideshow()
                             gfLoadJPEGFS( &fileBmp, buf );                      
                         }
                         
-                        if( screen.width > 320 )
+                        if( screen.width > 512 )
                         {                       
                             x  = ((ulong)randomNumber() ) % 320;
                             y  = ((ulong)randomNumber() ) % 240;
@@ -190,7 +190,7 @@ int slideshow()
 
                                         case _KEYCODE_F1:
 
-                                            if( screen.width == 320 )
+                                            /*if( screen.width == 320 )
                                             {
                                                 //switch to 640x480
                                                 screen.width    = 640;
@@ -208,7 +208,7 @@ int slideshow()
                                             {
                                                 //switch to 320x240
                                                 screen.width    = 320;
-                                                screen.rowWidth = 320;
+                                                screen.rowWidth = 512;
                                                 screen.height   = 240;
 
                                                 setVideoMode( _VIDEOMODE_320_TEXT80_OVER_GFX );
@@ -218,7 +218,7 @@ int slideshow()
                                                 //exit delay loop
                                                 i = 100;
                                             }
-
+                                            */
                                             break;
 
                                         default:
@@ -270,7 +270,7 @@ int main()
 
     //alloc screen buffers
     screen.width            = 320;
-    screen.rowWidth         = 320;
+    screen.rowWidth         = 512;
     screen.height           = 240;
     
     #endif

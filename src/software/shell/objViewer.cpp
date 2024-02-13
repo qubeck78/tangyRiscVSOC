@@ -499,7 +499,7 @@ int objvDisplayObj( tgfBitmap *pscr )
 	blt->bltTransferHeight	= 239;
 	blt->bltTransferWidth	= 160;
 	blt->bltSrcModulo		= 0;
-	blt->bltDstModulo		= 0;
+	blt->bltDstModulo		= 96;
 	blt->bltValue			= 0x00000000;	
 	
 	//run blitter
@@ -556,7 +556,7 @@ int objvDisplayObj( tgfBitmap *pscr )
 
 			blt->bltTransferWidth	= 320;			//screen size
 			blt->bltTransferHeight	= 240;
-			blt->bltDstModulo		= 320;			//screen modulo
+			blt->bltDstModulo		= 512;			//screen modulo
 
 			blt->bltDstAddress 				= ( ulong )(( ( ulong )pscr->buffer - _SYSTEM_MEMORY_BASE ) / 2);
 			blt->bltGouraudZBufferAddress	= ( ulong )(( ( ulong )zBuffer.buffer - _SYSTEM_MEMORY_BASE ) / 2);
