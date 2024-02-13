@@ -302,16 +302,18 @@ begin
                 --ch0 request 0 ( buffer, lower part )
                 if ch0DmaRequestLatched( 0 ) = '1' then
                
-                    ch0DmaBufPointer     <= "000000000";
-                    ch0TransferCounter   <= x"a0";      --160 long words
+                    ch0DmaBufPointer    <= "000000000";
+                    ch0TransferCounter  <= x"a0";      --160 long words
+                    sdrcDataLen         <= x"a0";
                   
                     dmaState <= dmaGfxFetch0;
                   
                 --ch0 request 0 ( buffer, upper part )
                 elsif ch0DmaRequestLatched( 1 ) = '1' then
                
-                    ch0DmaBufPointer     <= "100000000";
-                    ch0TransferCounter   <= x"a0";      --160 long words
+                    ch0DmaBufPointer    <= "100000000";
+                    ch0TransferCounter  <= x"a0";      --160 long words
+                    sdrcDataLen         <= x"a0";
                   
                     dmaState <= dmaGfxFetch0;
                 
@@ -322,6 +324,8 @@ begin
                     if sdrcBusyn = '1' then
 
                         ch2Ready <= '0';
+
+                        sdrcDataLen     <= x"00";
 
                         if ch2WordSize = '0' then
                       
@@ -409,6 +413,7 @@ begin
 
                         --common signals
                         sdrcAddr    <= a( 20 downto 0 );
+                        sdrcDataLen <= x"00";
 
                         if wr = '1' then
                         
@@ -450,11 +455,6 @@ begin
                     sdrcDqm                 <= "0000";
 
                     ch0BufRamWe				<= '0';
-                    ch0BufRamWrA			<= ch0DmaBufPointer;
-
-                    ch0TransferCounter		<= ch0TransferCounter - 1;
-                    ch0DmaPointer		    <= ch0DmaPointer + 1;
-                    ch0DmaBufPointer	    <= ch0DmaBufPointer + 1;
 
                     sdrcRdn                 <= '0';
 
@@ -472,6 +472,16 @@ begin
 
                 if sdrcRdValid = '1' then
 
+                    sdrcRdn <= '1';
+
+                    ch0BufRamWrA    <= ch0DmaBufPointer;
+                    ch0BufRamDIn    <= sdrcDataOut;
+                    ch0BufRamWe     <= '1';
+
+                    ch0TransferCounter		<= ch0TransferCounter - 1;
+                    ch0DmaPointer		    <= ch0DmaPointer + 1;
+                    ch0DmaBufPointer	    <= ch0DmaBufPointer + 1;
+
                     dmaState    <= dmaGfxFetch2;
 
                 end if;
@@ -480,22 +490,30 @@ begin
 
                 sdrcRdn <= '1';
 
+                ch0BufRamWrA    <= ch0DmaBufPointer;
                 ch0BufRamDIn    <= sdrcDataOut;
                 ch0BufRamWe     <= '1';
 
                 if ch0TransferCounter = x"00" then
                     
-                    dmaState                    <= dmaGfxFetch3;
                     ch0DmaRequestLatched( 0 )   <= '0';
                     ch0DmaRequestLatched( 1 )   <= '0';
 
+                    dmaState                    <= dmaGfxFetch3;
+
                 else
-            
-                    dmaState    <= dmaGfxFetch0;
+ 
+                    ch0TransferCounter		<= ch0TransferCounter - 1;
+                    ch0DmaPointer		    <= ch0DmaPointer + 1;
+                    ch0DmaBufPointer	    <= ch0DmaBufPointer + 1;
+           
+                    dmaState    <= dmaGfxFetch2;
 
                 end if;
 
             when dmaGfxFetch3 =>
+
+                ch0DmaPointer   <= ch0DmaPointer + 96;
 
                 ch0BufRamWe <= '0';
 

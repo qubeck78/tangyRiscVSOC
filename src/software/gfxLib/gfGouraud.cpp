@@ -1122,7 +1122,7 @@ ulong gfGouraudDrawTriangleZBuffer( tgfBitmap *bmp, tgfBitmap *zBuffer, tgfTrian
 		{
 
 			bmpPtr = NULL;
-			zBufPtr = &((ushort*)( zBuffer->buffer ))[ ( y * bmp->rowWidth ) ];
+			zBufPtr = &((ushort*)( zBuffer->buffer ))[ ( y * zBuffer->rowWidth ) ];
 
 			for( x = xMin; x <= xMax; x++ )
 			{
@@ -1326,7 +1326,7 @@ ulong gfGouraudDrawTexturedTriangleZBuffer( tgfBitmap *bmp, tgfBitmap *zBuffer, 
 	{
 
 		bmpPtr = NULL;
-		zBufPtr = &((ushort*)( zBuffer->buffer ))[ ( y * bmp->rowWidth ) ];
+		zBufPtr = &((ushort*)( zBuffer->buffer ))[ ( y * zBuffer->rowWidth ) ];
 
 		for( x = xMin; x <= xMax; x++ )
 		{

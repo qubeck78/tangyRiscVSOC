@@ -101,12 +101,12 @@ int init()
 
 	//alloc screen buffer
 	screen.width 			= 320;
-	screen.rowWidth			= 320;
+	screen.rowWidth			= 512;
 	screen.height   		= 240;
 		
 	screen.flags    		= 0;
 	screen.transparentColor = 0;
-	screen.buffer           = osAlloc( screen.width * screen.height * 2, OS_ALLOC_MEMF_CHIP );	//osAlloc( 320 * 240 * 2 );
+	screen.buffer           = osAlloc( screen.rowWidth * screen.height * 2, OS_ALLOC_MEMF_CHIP );	//osAlloc( 320 * 240 * 2 );
 	
 	if( screen.buffer == NULL )
 	{
@@ -123,12 +123,12 @@ int init()
 	
 	//alloc second screen for doublebuffered 3d viewer
 	screen2.width 				= 320;
-	screen2.rowWidth			= 320;
+	screen2.rowWidth			= 512;
 	screen2.height   			= 240;
 		
 	screen2.flags    			= 0;
 	screen2.transparentColor	= 0;
-	screen2.buffer           	= osAlloc( screen.width * screen.height * 2, OS_ALLOC_MEMF_CHIP );	
+	screen2.buffer           	= osAlloc( screen.rowWidth * screen.height * 2, OS_ALLOC_MEMF_CHIP );	
 	
 	if( screen2.buffer == NULL )
 	{
