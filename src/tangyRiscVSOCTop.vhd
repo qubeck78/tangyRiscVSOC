@@ -396,6 +396,47 @@ port(
 );
 end component;
 
+
+-- blitter
+component blitter is
+
+generic(
+   inst3DAcceleration:     boolean := false
+);
+
+port(
+
+   --cpu interface
+
+   reset:            in    std_logic;
+   clock:            in    std_logic;
+   a:                in    std_logic_vector( 15 downto 0 );
+   din:              in    std_logic_vector( 31 downto 0 );
+   dout:             out   std_logic_vector( 31 downto 0 );
+   
+   ce:               in    std_logic;
+   wr:               in    std_logic;
+   dataMask:         in    std_logic_vector( 3 downto 0 );
+   
+   ready:            out   std_logic;
+   
+   --dma interface
+   
+   dmaDin:           in    std_logic_vector( 31 downto 0 );
+   dmaDout:          out   std_logic_vector( 31 downto 0 );
+   
+   dmaA:             out   std_logic_vector( 21 downto 0 );
+   dmaRWn:           out   std_logic;
+   dmaRequest:       out   std_logic;
+   dmaTransferSize:  out   std_logic;
+   dmaTransferMask:  out   std_logic_vector( 1 downto 0 );
+   dmaReady:         in    std_logic
+
+);
+
+end component;
+
+
 -- signals
 
 -- clocks
@@ -574,6 +615,13 @@ signal   usbHostDoutForCPU:      std_logic_vector( 31 downto 0 );
 -- usb phy clock ( 12 MHz )
 signal   usbHClk:                std_logic;
 
+-- blitter signals
+signal   blitterClock:           std_logic;
+signal   blitterCE:              std_logic;
+signal   blitterReady:           std_logic;
+signal   blitterDoutForCPU:      std_logic_vector( 31 downto 0 );
+
+
 begin
 
 
@@ -624,6 +672,9 @@ begin
 
 --usb phy clock ( 12MHz )
     usbHClk              <= extPllClock12;
+
+--blitter clock
+    blitterClock        <= clkd2_80;
 
 -- leds
     leds    <= gpoRegister( 7 downto 2 ); 
@@ -956,8 +1007,8 @@ end process;
     registersCE       <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"f00" else '0';
 
 --   fpAluCE           <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"f01" else '0';
---   
---   blitterCE         <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"f02" else '0';
+   
+    blitterCE         <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"f02" else '0';
     
     usbHostCE         <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"f03" else '0';
 
@@ -976,12 +1027,12 @@ end process;
                         else usbHostReady when usbHostCE = '1' 
                         else '1' when registersCE = '1' 
                         else cpuDmaReady when dmaMemoryCE = '1' 
+                        else blitterReady when blitterCE = '1' 
                         
                         else '1';
 
 
 --                        else fpAluReady when fpAluCE = '1' 
---                        else blitterReady when blitterCE = '1' 
 --                        else sdramCtrlSdramReady when sdramCtrlCE = '1' 
 
 
@@ -993,9 +1044,9 @@ end process;
                         usbHostDoutForCPU                         when cpuAOutFull( 31 downto 20 ) = x"f03" else 
                         registersDoutForCPU                       when cpuAOutFull( 31 downto 20 ) = x"f00" else
                         dmaDoutForCPU                             when cpuAOutFull( 31 downto 24 ) = x"20"  else
+                        blitterDoutForCPU                         when cpuAOutFull( 31 downto 20 ) = x"f02" else
 
 --                        fpAluDoutForCPU                           when cpuAOutFull( 31 downto 20 ) = x"f01" else
---                        blitterDoutForCPU                         when cpuAOutFull( 31 downto 20 ) = x"f02" else
 --                        sdramCtrlDataOutForCPU                    when cpuAOutFull( 31 downto 28 ) = x"4"   else
 
                           x"00000000";
@@ -1308,14 +1359,14 @@ port map(
    
    
     --blitter interface ( ch2 )
-    ch2DmaRequest           => '0',
-    ch2A                    => ( others => '0' ),
-    ch2Din                  => ( others => '0' ),
-    --ch2Dout               =>
-    ch2RWn                  => '1',
-    ch2WordSize             => '0',
-    ch2DataMask             => "11",
-    --ch2Ready              => 
+    ch2DmaRequest           => dmaCh2Request,
+    ch2A                    => dmaCh2A,
+    ch2Din                  => dmaCh2Din,
+    ch2Dout                 => dmaCh2Dout,
+    ch2RWn                  => dmaCh2RWn,
+    ch2WordSize             => dmaCh2TransferSize,
+    ch2DataMask             => dmaCh2TransferMask,
+    ch2Ready                => dmaCh2Ready,
    
    
     --cpu interface ( ch3 )
@@ -1339,6 +1390,43 @@ port map(
 	O_sdram_addr            => O_sdram_addr,
 	O_sdram_ba              => O_sdram_ba,
 	IO_sdram_dq             => IO_sdram_dq
+
+);
+
+
+-- place blitter
+
+blitterInst:blitter
+generic map(
+   inst3DAcceleration   => false
+)
+port map(
+
+   --cpu interface
+
+   reset          => reset,
+   clock          => blitterClock,
+   a              => cpuAOut( 15 downto 0 ),
+   din            => cpuDOut,
+   dout           => blitterDoutForCpu,
+   
+   ce             => blitterCE,
+   wr             => cpuWr,
+   dataMask       => cpuDataMask,
+   
+   ready          => blitterReady,
+   
+   --dma interface
+
+   dmaDin            => dmaCh2Dout,
+   dmaDout           => dmaCh2Din,
+   
+   dmaA              => dmaCh2A,
+   dmaRWn            => dmaCh2RWn,
+   dmaRequest        => dmaCh2Request,
+   dmaTransferSize   => dmaCh2TransferSize,
+   dmaTransferMask   => dmaCh2TransferMask,
+   dmaReady          => dmaCh2Ready
 
 );
 

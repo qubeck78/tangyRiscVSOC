@@ -10,11 +10,13 @@
         <File path="src/usb_hid_host_rom.v" type="file.verilog" enable="1"/>
         <File path="src/InputSync.vhd" type="file.vhdl" enable="1"/>
         <File path="src/SDRAM_controller_top_SIP/SDRAM_controller_top_SIP.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/blitter.vhd" type="file.vhdl" enable="1"/>
         <File path="src/clkdiv5/clkdiv5.vhd" type="file.vhdl" enable="1"/>
         <File path="src/dvi_tx/dvi_tx.vhd" type="file.vhdl" enable="1"/>
         <File path="src/fontProm/fontProm.vhd" type="file.vhdl" enable="1"/>
         <File path="src/gfxBufRam/gfxBufRam.vhd" type="file.vhdl" enable="1"/>
         <File path="src/keyboardFifo/keyboardFifo.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/pixelAlpha.vhd" type="file.vhdl" enable="1"/>
         <File path="src/pixelGenGfx.vhd" type="file.vhdl" enable="1"/>
         <File path="src/pixelGenTxt.vhd" type="file.vhdl" enable="1"/>
         <File path="src/pllHDMI/pllHDMI.vhd" type="file.vhdl" enable="1"/>

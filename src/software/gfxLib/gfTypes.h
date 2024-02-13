@@ -9,8 +9,11 @@
 //#define _GFXLIB_ESP32_FFAT
 //#define _GFXLIB_BIG_ENDIAN
 
+//_GFXLIB_FPALU
+
 #define _GFXLIB_RISCV_FATFS
-//#define _GFXLIB_HW_BLITTER_2D
+#define _GFXLIB_HW_BLITTER_2D
+//#define _GFXLIB_HW_BLITTER_3D
 
 
 typedef unsigned char	uchar;

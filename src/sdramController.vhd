@@ -141,13 +141,13 @@ signal sdrcRdValid:                 std_logic;
 signal sdrcWrdAck:                  std_logic; 
 
 
-type  dmaState_T is ( dmaIdle, dmaGfxFetch0, dmaGfxFetch1, dmaGfxFetch2, dmaGfxFetch3, dmaGfxFetch4, dmaGfxFetch5,
+type  dmaState_T is ( dmaIdle, dmaGfxFetch0, dmaGfxFetch1, dmaGfxFetch2, dmaGfxFetch3, 
                      dmaCpuWrite0, dmaCpuWrite1, 
                      dmaCpuRead0, dmaCpuRead1, 
-                     dmaCh2Write0, dmaCh2Write1, dmaCh2Write2,  
-                     dmaCh2Read0, dmaCh2Read1, dmaCh2Read2,
-                     dmaCh2Write32_0, dmaCh2Write32_1, dmaCh2Write32_2, 
-                     dmaCh2Read32_0, dmaCh2Read32_1, dmaCh2Read32_2, dmaCh2Read32_3, dmaCh2Read32_4               
+                     dmaCh2Write0, dmaCh2Write1,   
+                     dmaCh2Read0, dmaCh2Read1, 
+                     dmaCh2Write32_0, dmaCh2Write32_1, 
+                     dmaCh2Read32_0, dmaCh2Read32_1                
                );
                      
 signal   dmaState:   dmaState_T;
@@ -243,12 +243,9 @@ begin
   
 
             --dma channels
-            ch2Dout     <= ( others => '0' );
-            ch2Ready    <= '1';
-             
-            dout        <= ( others => '0' );
-            ready       <= '0';
-             
+
+            --ch0 pixelGenGfx ( framebuffer )
+
             --ch0 buf ram
             ch0BufRamDIn   <= ( others => '0' );
             ch0BufRamWrA   <= ( others => '0' );
@@ -261,6 +258,14 @@ begin
             ch0TransferCounter   <= ( others => '0' );
 
             ch0DmaRequestLatched <= "00";
+
+            --ch2 - blitter
+            ch2Dout     <= ( others => '0' );
+            ch2Ready    <= '1';
+             
+            --ch3 - cpu
+            dout        <= ( others => '0' );
+            ready       <= '0';
              
             dmaState <= dmaIdle;
      
@@ -293,23 +298,111 @@ begin
                 --hold cpu
                 ready   <= '0';
 
-               --ch0 request 0 ( buffer, lower part )
-               if ch0DmaRequestLatched( 0 ) = '1' then
+                --ch0 - pixelGenGfx
+                --ch0 request 0 ( buffer, lower part )
+                if ch0DmaRequestLatched( 0 ) = '1' then
                
-                  ch0DmaBufPointer     <= "000000000";
-                  ch0TransferCounter   <= x"a0";      --160 long words
+                    ch0DmaBufPointer     <= "000000000";
+                    ch0TransferCounter   <= x"a0";      --160 long words
                   
-                  dmaState <= dmaGfxFetch0;
+                    dmaState <= dmaGfxFetch0;
                   
-               --ch0 request 0 ( buffer, upper part )
-               elsif ch0DmaRequestLatched( 1 ) = '1' then
+                --ch0 request 0 ( buffer, upper part )
+                elsif ch0DmaRequestLatched( 1 ) = '1' then
                
-                  ch0DmaBufPointer     <= "100000000";
-                  ch0TransferCounter   <= x"a0";      --160 long words
+                    ch0DmaBufPointer     <= "100000000";
+                    ch0TransferCounter   <= x"a0";      --160 long words
                   
-                  dmaState <= dmaGfxFetch0;
+                    dmaState <= dmaGfxFetch0;
+                
+                --ch2 - blitter
+                --ch2 request 
+                elsif ch2DmaRequest = '1' then
+
+                    if sdrcBusyn = '1' then
+
+                        ch2Ready <= '0';
+
+                        if ch2WordSize = '0' then
+                      
+                            --16 bit transfer
+
+                            --address
+                            sdrcAddr <= ch2A( 21 downto 1 );
+
+                            if ch2A( 0 ) = '0' then
+
+                                sdrcDqm(0)  <= '0';     --d15 downto d0
+                                sdrcDqm(1)  <= '0';
+                                sdrcDqm(2)  <= '1';
+                                sdrcDqm(3)  <= '1';
+                            
+                            else
+
+                                sdrcDqm(0)  <= '1';
+                                sdrcDqm(1)  <= '1';
+                                sdrcDqm(2)  <= '0';     --d31 downto d16
+                                sdrcDqm(3)  <= '0';
+
+                            end if;  
+                                
+                            if ch2RWn = '1' then
+
+                                --read
+                                sdrcRdn     <= '0';
+                                dmaState    <= dmaCh2Read0;
+            
+                            else
+
+                                --write
+
+                                if ch2A( 0 ) = '0' then
+
+                                    sdrcDataIn( 15 downto 0 )   <= ch2Din( 15 downto 0 );
+
+                                else
+
+                                    sdrcDataIn( 31 downto 16)   <= ch2Din( 15 downto 0 );
+
+                                end if;
+
+                                sdrcWrn     <= '0';
+                                dmaState    <= dmaCh2Write0;
+
+                            end if; --ch2RWn = '1' or '0'
+                
+
+                        else
+                        
+                            --32 bit transfer
+
+                            sdrcAddr    <= ch2A( 20 downto 0 );
+                            sdrcDqm     <= "0000";  -- d31 downto d0
+
+                            if ch2RWn = '1' then
+                            
+                                --read
+
+                                sdrcRdn     <= '0';
+                                dmaState    <= dmaCh2Read32_0;
+
+                            else
+
+                                --write
+
+                                sdrcDataIn  <= ch2Din;
+                                sdrcWrn     <= '0';
+
+                                dmaState    <= dmaCh2Write32_0;
+
+                            end if; --ch2RWn = '1' or '0'
+            
+                        end if; --ch2WordSize = '0' or '1'
+
+                    end if; --sdrcBusyn = '1'
 
                 --ch3 - cpu
+                --ch3 request
                 elsif ce = '1' then
                 
                     if sdrcBusyn = '1' then
@@ -407,6 +500,113 @@ begin
                 ch0BufRamWe <= '0';
 
                 dmaState    <= dmaIdle;
+
+
+            when dmaCh2Read0 =>
+
+                if sdrcWrdAck = '1' then
+
+                    sdrcRdn <= '1';
+
+                end if;
+ 
+                if sdrcRdValid = '1' then 
+
+                    if ch2A( 0 ) = '0' then
+                        
+                        ch2Dout( 15 downto 0 )  <= sdrcDataOut( 15 downto 0 );
+                    
+                    else
+
+                        ch2Dout( 15 downto 0 ) <= sdrcDataOut( 31 downto 16 );
+
+                    end if;  
+
+                    sdrcRdn     <= '1';
+                    ch2Ready    <= '1';
+
+                    dmaState    <= dmaCh2Read1;
+                
+                end if; --sdrcRdValid = '1'
+            
+            when dmaCh2Read1 =>
+
+
+                if ch2DmaRequest = '0' then
+
+                    dmaState    <= dmaIdle;
+
+                end if;
+
+            when dmaCh2Write0 =>
+
+                if sdrcWrdAck = '1' then
+
+                    sdrcWrn     <= '1';
+
+                    ch2Ready    <= '1';
+
+                    dmaState    <= dmaCh2Write1;
+
+                end if;
+                
+            when dmaCh2Write1 =>
+
+                
+                if ch2DmaRequest = '0' then
+
+                    dmaState    <= dmaIdle;
+
+                end if;
+
+
+            when dmaCh2Read32_0 =>
+
+                if sdrcWrdAck = '1' then
+
+                    sdrcRdn <= '1';
+
+                end if;
+ 
+                if sdrcRdValid = '1' then 
+            
+                    ch2Dout     <= sdrcDataOut;
+                    
+                    sdrcRdn     <= '1';
+                    ch2Ready    <= '1';
+
+                    dmaState    <= dmaCh2Read32_1;
+                
+                end if; --sdrcRdValid = '1'
+            
+            when dmaCh2Read32_1 =>
+
+                if ch2DmaRequest = '0' then
+
+                    dmaState    <= dmaIdle;
+
+                end if;
+
+            when dmaCh2Write32_0 =>
+
+                if sdrcWrdAck = '1' then
+
+                    sdrcWrn     <= '1';
+
+                    ch2Ready    <= '1';
+
+                    dmaState    <= dmaCh2Write32_1;
+
+                end if;
+                
+            when dmaCh2Write32_1 =>
+
+                
+                if ch2DmaRequest = '0' then
+
+                    dmaState    <= dmaIdle;
+
+                end if;
 
 
             when dmaCpuRead0 =>
