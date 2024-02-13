@@ -234,6 +234,7 @@ int     setVideoMode( ulong videoMode );
 void    reboot( void );
 
 
+#ifdef _GFXLIB_FPALU
 
 float inline ffMul( float a, float b )
 {
@@ -284,4 +285,28 @@ float inline ffDiv( float a, float b )
     return fpalu->fpDivResult;
 }
 
+#else
+
+float inline ffMul( float a, float b )
+{
+    return a * b;
+}
+
+float inline ffAdd( float a, float b )
+{        
+    return a + b;
+}
+
+float inline ffSub( float a, float b )
+{    
+    return a - b;
+}
+
+float inline ffDiv( float a, float b )
+{
+    return a / b;
+}
+
+
+#endif
 #endif

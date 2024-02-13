@@ -779,7 +779,7 @@ int objvView( char* fileName )
 
 	exitMainLoop = 0;
 
-	#ifdef _GFXLIB_HW_BLITTER_2D
+	#ifdef _GFXLIB_HW_BLITTER_3D
 	rendererType = 0;
 	#else
 	rendererType = 2;
@@ -821,7 +821,11 @@ int objvView( char* fileName )
 
 						if( rendererType > 3 )
 						{
+							#ifdef _GFXLIB_HW_BLITTER_3D
 							rendererType = 0;
+							#else
+							rendererType = 2;
+							#endif
 						}
 
 						break;
