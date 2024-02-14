@@ -1608,11 +1608,11 @@ begin
 						--z buffer enabled
 						if bltInsideTriangleFlag = '0' then
 						
-							bltTransferCounterX	<= x"000a";		--no memory write delay, add 10 wait cycles
+							bltTransferCounterX	<= x"0009";		--no memory write delay, add 9 wait cycles
 					
 						else
 
-							bltTransferCounterX	<= x"0002";		--memory write causes additional delay, add 3 wait cycles
+							bltTransferCounterX	<= x"0000";		--memory write causes additional delay, add 1 wait cycle
 					
 						end if;
 					
@@ -1621,11 +1621,11 @@ begin
 						--z buffer disabled
 						if bltInsideTriangleFlag = '0' then
 						
-							bltTransferCounterX	<= x"0009";		--no memory write delay, add 9 wait cycles
+							bltTransferCounterX	<= x"0008";		--no memory write delay, add 8 wait cycles
 					
 						else
 
-							bltTransferCounterX	<= x"0003";		--memory write causes additional delay, add 3 wait cycles
+							bltTransferCounterX	<= x"0000";		--memory write causes additional delay, add 1 wait cycle
 					
 						end if;
 					
