@@ -8,12 +8,15 @@ Contains:
 - 3D gouraud hw accelerator with texture and light support
 - Memory mapped floating point ALU 
 - Serial interface for program upload
-- SPI interface - sd card support 
+- SPI interface - SD card support 
 - USB HID host controller ( https://github.com/nand2mario/usb_hid_host ) 
 - GW2AR internal SDRAM controller with dma
 
+No external components needed, unless You want to connect an USB keyboard. Works on plain Tang Nano 20K board.
 
-No external components needed, unless You want to connect a USB keyboard. Works on plain Tang Nano 20K board.
+Most examples require additional files placed on a SD card. Format SD card ( FAT32 ) and copy the 'SD' directory 
+of each example to the SD card root dir.
+
 
 For USB HID host functionality:
 
