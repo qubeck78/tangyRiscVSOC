@@ -1,7 +1,7 @@
 #ifndef _GFTYPES_H
 #define _GFTYPES_H
 
-#define _GFXLIB_VERSION 20231230
+#define _GFXLIB_VERSION 20240214
 
 
 //#define _GFXLIB_SDL
@@ -9,11 +9,11 @@
 //#define _GFXLIB_ESP32_FFAT
 //#define _GFXLIB_BIG_ENDIAN
 
-//_GFXLIB_FPALU
 
 #define _GFXLIB_RISCV_FATFS
 #define _GFXLIB_HW_BLITTER_2D
 #define _GFXLIB_HW_BLITTER_3D
+//#define _GFXLIB_FPALU
 
 
 typedef unsigned char	uchar;

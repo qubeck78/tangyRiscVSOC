@@ -5,6 +5,14 @@ use IEEE.std_logic_unsigned.all;
 
 
 entity tangyRiscVSOCTop is
+
+generic(
+   instBlitter3DAcceleration:    boolean := true;
+   instFastFloatingMath:         boolean := false;
+   instHidUSBHost:               boolean := true
+
+);
+
 port(
 	
 	--onboard peripherals
@@ -436,6 +444,23 @@ port(
 
 end component;
 
+-- fp alu
+component fpAlu is
+port(
+   reset:      in    std_logic;
+   clock:      in    std_logic;
+   a:          in    std_logic_vector( 15 downto 0 );
+   din:        in    std_logic_vector( 31 downto 0 );
+   dout:       out   std_logic_vector( 31 downto 0 );
+   
+   ce:         in    std_logic;
+   wr:         in    std_logic;
+   dataMask:   in    std_logic_vector( 3 downto 0 );
+   
+   ready:      out   std_logic
+);
+
+end component;
 
 -- signals
 
@@ -621,6 +646,11 @@ signal   blitterCE:              std_logic;
 signal   blitterReady:           std_logic;
 signal   blitterDoutForCPU:      std_logic_vector( 31 downto 0 );
 
+-- fpalu signals
+signal   fpAluClock:       std_logic;
+signal   fpAluCE:          std_logic;
+signal   fpAluDoutForCPU:  std_logic_vector( 31 downto 0 );
+signal   fpAluReady:       std_logic;
 
 begin
 
@@ -675,6 +705,10 @@ begin
 
 --blitter clock
     blitterClock        <= clkd2_80;
+
+
+--floating point memory mapped alu clock
+    fpaluClock          <= clkd2_80;
 
 -- leds
     leds    <= gpoRegister( 7 downto 2 ); 
@@ -1006,7 +1040,7 @@ end process;
          
     registersCE       <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"f00" else '0';
 
---   fpAluCE           <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"f01" else '0';
+    fpAluCE           <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"f01" else '0';
    
     blitterCE         <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"f02" else '0';
     
@@ -1028,11 +1062,11 @@ end process;
                         else '1' when registersCE = '1' 
                         else cpuDmaReady when dmaMemoryCE = '1' 
                         else blitterReady when blitterCE = '1' 
+                        else fpAluReady when fpAluCE = '1' 
                         
                         else '1';
 
 
---                        else fpAluReady when fpAluCE = '1' 
 --                        else sdramCtrlSdramReady when sdramCtrlCE = '1' 
 
 
@@ -1045,8 +1079,8 @@ end process;
                         registersDoutForCPU                       when cpuAOutFull( 31 downto 20 ) = x"f00" else
                         dmaDoutForCPU                             when cpuAOutFull( 31 downto 24 ) = x"20"  else
                         blitterDoutForCPU                         when cpuAOutFull( 31 downto 20 ) = x"f02" else
+                        fpAluDoutForCPU                           when cpuAOutFull( 31 downto 20 ) = x"f01" else
 
---                        fpAluDoutForCPU                           when cpuAOutFull( 31 downto 20 ) = x"f01" else
 --                        sdramCtrlDataOutForCPU                    when cpuAOutFull( 31 downto 28 ) = x"4"   else
 
                           x"00000000";
@@ -1308,32 +1342,35 @@ port map(
    
 );
 
+instHidUSBHostGen: if ( instHidUSBHost = true ) generate
 
--- place usb host
-usbHostInst: usbHost
-port map(
+    -- place usb host
+    usbHostInst: usbHost
+    port map(
 
-  --cpu interface
-  reset          => reset,
-  clock          => usbHostClock,
-  a              => cpuAOut( 15 downto 0 ),
-  din            => cpuDOut,
-  dout           => usbHostDoutForCpu,
-  
-  ce             => usbHostCE,
-  wr             => cpuWr,
-  dataMask       => cpuDataMask,
-  
-  ready          => usbHostReady,
-  
-  --usb phy clock (12MHz)
-  usbHClk        => usbHClk,
-  
-  --usb interfaces
-  usbH0Dp        => usbhDp,
-  usbH0Dm        => usbhDm   
+      --cpu interface
+      reset          => reset,
+      clock          => usbHostClock,
+      a              => cpuAOut( 15 downto 0 ),
+      din            => cpuDOut,
+      dout           => usbHostDoutForCpu,
+      
+      ce             => usbHostCE,
+      wr             => cpuWr,
+      dataMask       => cpuDataMask,
+      
+      ready          => usbHostReady,
+      
+      --usb phy clock (12MHz)
+      usbHClk        => usbHClk,
+      
+      --usb interfaces
+      usbH0Dp        => usbhDp,
+      usbH0Dm        => usbhDm   
 
-);
+    );
+
+end generate;
 
 -- place sdram dma 
 sdramControllerInst:sdramController
@@ -1398,7 +1435,7 @@ port map(
 
 blitterInst:blitter
 generic map(
-   inst3DAcceleration   => true
+   inst3DAcceleration   => instBlitter3DAcceleration
 )
 port map(
 
@@ -1430,7 +1467,25 @@ port map(
 
 );
 
+instFastFloatingMathGen: if( instFastFloatingMath = true ) generate
 
+    -- place fpAlu
+    fpAluInst:fpAlu
+    port map(
+       reset    => reset,
+       clock    => fpAluClock,
+       a        => cpuAOut( 15 downto 0 ),
+       din      => cpuDOut,
+       dout     => fpAluDoutForCPU,
+       
+       ce       => fpAluCE,
+       wr       => cpuWr,
+       dataMask => cpuDataMask,
+       
+       ready    => fpAluReady
+    );
+
+end generate;
 
 --tick timer process
 tickTimer: process( all )

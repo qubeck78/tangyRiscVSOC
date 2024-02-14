@@ -15,6 +15,11 @@
         <File path="src/divider32s/divider32s.vhd" type="file.vhdl" enable="1"/>
         <File path="src/dvi_tx/dvi_tx.vhd" type="file.vhdl" enable="1"/>
         <File path="src/fontProm/fontProm.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/fpAdd/fpAdd.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/fpAlu.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/fpDiv/fpDiv.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/fpMult/fpMult.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/fpSub/fpSub.vhd" type="file.vhdl" enable="1"/>
         <File path="src/gfxBufRam/gfxBufRam.vhd" type="file.vhdl" enable="1"/>
         <File path="src/gouraudEdge.vhd" type="file.vhdl" enable="1"/>
         <File path="src/gouraudIterator.vhd" type="file.vhdl" enable="1"/>
