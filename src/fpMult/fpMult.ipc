@@ -1,0 +1,17 @@
+[General]
+ipc_version=4
+file=fpMult
+module=fpMult
+target_device=gw2ar18c-000
+type=fp_mult
+version=1.0
+
+[Config]
+ClkEnable=false
+DisableIO=true
+LANG=1
+Nan=false
+Overflow=false
+Synthesis_tool=GowinSynthesis
+Underflow=false
+Zero=false
