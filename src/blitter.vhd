@@ -52,21 +52,21 @@ architecture behavior of blitter is
 --gouraud edge computation component
 component gouraudEdge is
 port(
-	--reset
-	 reset:                          in  std_logic;
-    clock:                          in  std_logic;
+    --reset
+    reset:  in  std_logic;
+    clock:  in  std_logic;
 	
-	 e1_x:									in std_logic_vector( 15 downto 0 );
-	 e1_y:									in std_logic_vector( 15 downto 0 );
+    e1_x:   in std_logic_vector( 15 downto 0 );
+    e1_y:   in std_logic_vector( 15 downto 0 );
 	 
-	 e2_x:									in std_logic_vector( 15 downto 0 );
-	 e2_y:									in std_logic_vector( 15 downto 0 );
+    e2_x:   in std_logic_vector( 15 downto 0 );
+    e2_y:   in std_logic_vector( 15 downto 0 );
 
-	 p_x:										in std_logic_vector( 15 downto 0 );
-	 p_y:										in std_logic_vector( 15 downto 0 );
+    p_x:    in std_logic_vector( 15 downto 0 );
+    p_y:    in std_logic_vector( 15 downto 0 );
 
 	 
-	 edge:									out std_logic_vector( 31 downto 0 )
+    edge:   out std_logic_vector( 31 downto 0 )
 );
 end component;
 
@@ -75,13 +75,13 @@ end component;
 component gouraudWeight is
 port(
 	--reset
-	 reset:                          in  std_logic;
-    clock:                          in  std_logic;
+    reset:  in  std_logic;
+    clock:  in  std_logic;
 	 
-	 edge:									in std_logic_vector( 31 downto 0 );
-	 area:									in std_logic_vector( 31 downto 0 );
+    edge:   in std_logic_vector( 31 downto 0 );
+    area:   in std_logic_vector( 31 downto 0 );
 	 
-	 weight:									out std_logic_vector( 31 downto 0 )
+    weight: out std_logic_vector( 31 downto 0 )
 
 );
 end component;
@@ -91,18 +91,18 @@ end component;
 component gouraudIterator is
 port(
 	--reset
-	 reset:                          in  std_logic;
-    clock:                          in  std_logic;
+    reset:      in  std_logic;
+    clock:      in  std_logic;
 	 	 
-	 weightCB:								in  std_logic_vector( 15 downto 0 );
-	 weightAC:								in  std_logic_vector( 15 downto 0 );
-	 weightBA:								in  std_logic_vector( 15 downto 0 );
+    weightCB:   in  std_logic_vector( 15 downto 0 );
+    weightAC:   in  std_logic_vector( 15 downto 0 );
+    weightBA:   in  std_logic_vector( 15 downto 0 );
 
-	 valA:									in  std_logic_vector( 7 downto 0 );
-	 valB:									in  std_logic_vector( 7 downto 0 );
-	 valC:									in  std_logic_vector( 7 downto 0 );
+    valA:       in  std_logic_vector( 7 downto 0 );
+    valB:       in  std_logic_vector( 7 downto 0 );
+    valC:       in  std_logic_vector( 7 downto 0 );
 
-	 valOut:									out std_logic_vector( 7 downto 0 )
+    valOut:     out std_logic_vector( 7 downto 0 )
 );
 end component;
 
@@ -1608,11 +1608,11 @@ begin
 						--z buffer enabled
 						if bltInsideTriangleFlag = '0' then
 						
-							bltTransferCounterX	<= x"0008";		--no memory write delay, add 8 wait cycles
+							bltTransferCounterX	<= x"0009";		--no memory write delay, add 9 wait cycles
 					
 						else
 
-							bltTransferCounterX	<= x"0003";		--memory write causes additional delay, add 3 wait cycles
+							bltTransferCounterX	<= x"0000";		--memory write causes additional delay, add 1 wait cycle
 					
 						end if;
 					
@@ -1621,11 +1621,11 @@ begin
 						--z buffer disabled
 						if bltInsideTriangleFlag = '0' then
 						
-							bltTransferCounterX	<= x"0007";		--no memory write delay, add 7 wait cycles
+							bltTransferCounterX	<= x"0008";		--no memory write delay, add 8 wait cycles
 					
 						else
 
-							bltTransferCounterX	<= x"0003";		--memory write causes additional delay, add 3 wait cycles
+							bltTransferCounterX	<= x"0000";		--memory write causes additional delay, add 1 wait cycle
 					
 						end if;
 					

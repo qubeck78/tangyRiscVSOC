@@ -1398,7 +1398,7 @@ port map(
 
 blitterInst:blitter
 generic map(
-   inst3DAcceleration   => false
+   inst3DAcceleration   => true
 )
 port map(
 

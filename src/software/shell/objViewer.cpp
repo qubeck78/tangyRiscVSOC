@@ -530,7 +530,7 @@ int objvDisplayObj( tgfBitmap *pscr )
 	blt->bltTransferHeight	= 239;
 	blt->bltTransferWidth	= 160;
 	blt->bltSrcModulo		= 0;
-	blt->bltDstModulo		= 0;
+	blt->bltDstModulo		= 96;
 	blt->bltValue			= 0xffffffff;	
 	
 	blt->bltStatus			= 0x1;

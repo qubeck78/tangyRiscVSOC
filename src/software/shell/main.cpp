@@ -140,11 +140,11 @@ int init()
 	//alloc z-buffer
 
 	zBuffer.width				= 320;
-	zBuffer.rowWidth			= 320;
+	zBuffer.rowWidth			= 512;
 	zBuffer.height				= 240;
 	zBuffer.flags				= 0;
 	zBuffer.transparentColor	= 0;
-	zBuffer.buffer				= osAlloc( zBuffer.width * ( zBuffer.height + 1 ) * 2, OS_ALLOC_MEMF_CHIP );
+	zBuffer.buffer				= osAlloc( zBuffer.rowWidth * ( zBuffer.height + 1 ) * 2, OS_ALLOC_MEMF_CHIP );
 	
 	if( zBuffer.buffer == NULL )
 	{
