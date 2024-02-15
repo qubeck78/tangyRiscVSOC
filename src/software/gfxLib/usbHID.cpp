@@ -1,7 +1,10 @@
 #include "usbHID.h"
 
-uchar activeKeys[4];
-uchar shiftState;
+static uchar   activeKeys[4];
+static uchar   shiftState;
+
+static ulong   lastPressedKeyRepeatTime;
+static uchar   lastPressedKeyCode;
 
 const char HIDkeys[] = {
     0x0, '-', 0x0, 0x00,
@@ -42,7 +45,7 @@ const char HIDKeysShifted[] = {
 };
 
 
-static int findInArray( uchar element, uchar *array, int arrayLength )
+static ulong findInArray( uchar element, uchar *array, int arrayLength )
 {
   int i;
 
@@ -57,154 +60,221 @@ static int findInArray( uchar element, uchar *array, int arrayLength )
   return -1;
 }
 
-int usbHIDInit()
+ulong usbHIDInit()
 {
-  int i;
+   int i;
 
-  for( i = 0 ; i < sizeof( activeKeys ); i++ )
-  {
-    activeKeys[i] = 0;
-  }
+   for( i = 0 ; i < sizeof( activeKeys ); i++ )
+   {
+      activeKeys[i] = 0;
+   }
 
-  shiftState = 0;
+   shiftState                 = 0;
+   lastPressedKeyRepeatTime   = 0xffffffff;
+   lastPressedKeyCode         = 0;
 
-	return 0;
+   return 0;
 }
 
-static int usbHIDRxMain( ulong rxData )
+static ulong usbHIDRxMain( ulong rxData )
 {
-	uchar 		shf;
-	uchar 		keys[3];
-	int			i;
-	int			pos;
-	tosUIEvent	event;
-	
-	shf		= ( rxData >> 24 ) & 0xff;
-	keys[2]	= ( rxData >> 16 ) & 0xff;
-	keys[1] = ( rxData >> 8 ) & 0xff;
-	keys[0]	= ( rxData ) & 0xff;
-	
-	//check shift state
-	
-	if(( shf & 0x02 ) || ( shf & 0x20 ))
-	{
-		shiftState |= SST_SHIFT;
-	}
-	else
-	{
-		shiftState &= ( SST_SHIFT ^ 0xff );
-	}
-	
-	if( shf & 0x01 )
-	{
-		shiftState |= SST_CONTROL;
-	}
-	else
-	{
-		shiftState &= ( SST_CONTROL ^ 0xff );
-	}
-	  
-	if( ( shf & 0x04 ) || ( shf & 0x40 ) )
-	{
-		shiftState |= SST_ALT;
-	}
-	else
-	{
-		shiftState &= ( SST_ALT ^ 0xff );
-	}
-	
-	//check for key release
-	for( i = 0; i < sizeof( activeKeys ); i++ )
-	{
-		if( activeKeys[i] != 0 )
-		{
-			//check if still pressed
-			pos = findInArray( activeKeys[i], keys, sizeof( keys ) );
-			
-			if( pos == -1 )
-			{
-				//key has been released
-				
-				//todo: send event
-				activeKeys[i] = 0;
-			}
-		}
-	}
-	
-	//check for key press
-	for( i = 0; i < sizeof( keys ); i++ )
-	{
-		if( keys[i] != 0 )
-		{
-			//we have a scancode
-		
-			//check if already pressed
-			pos = findInArray( keys[i], activeKeys, sizeof( activeKeys ) );
-		
-			if( pos == -1 )
-			{
-				//key is not in activekeys, so we have a keydown event
+   uchar       shf;
+   uchar       keys[3];
+   int         i;
+   int         pos;
+   tosUIEvent  event;
+   
+   shf      = ( rxData >> 24 ) & 0xff;
+   keys[2]  = ( rxData >> 16 ) & 0xff;
+   keys[1]  = ( rxData >> 8 ) & 0xff;
+   keys[0]  = ( rxData ) & 0xff;
+   
+   //check shift state
+   
+   if(( shf & 0x02 ) || ( shf & 0x20 ))
+   {
+      shiftState |= SST_SHIFT;
+   }
+   else
+   {
+      shiftState &= ( SST_SHIFT ^ 0xff );
+   }
+   
+   if( shf & 0x01 )
+   {
+      shiftState |= SST_CONTROL;
+   }
+   else
+   {
+      shiftState &= ( SST_CONTROL ^ 0xff );
+   }
+     
+   if( ( shf & 0x04 ) || ( shf & 0x40 ) )
+   {
+      shiftState |= SST_ALT;
+   }
+   else
+   {
+      shiftState &= ( SST_ALT ^ 0xff );
+   }
+   
+   //check for key release
+   for( i = 0; i < sizeof( activeKeys ); i++ )
+   {
+      if( activeKeys[i] != 0 )
+      {
+         //check if still pressed
+         pos = findInArray( activeKeys[i], keys, sizeof( keys ) );
+         
+         if( pos == -1 )
+         {
+            
+            //key has been released
 
-				//store key value
-				//find empty slot
-				pos = findInArray( 0, activeKeys, sizeof( activeKeys ) );
-				if( pos == -1 )
-				{
-					//error - not free slots, abort
-				}
-				else
-				{
-					//save key code
-					activeKeys[pos] = keys[i];
+            //generate keyrelease event
+            event.type  = OS_EVENT_TYPE_KEYBOARD_KEYRELEASE;
+            
+            if( shiftState & SST_SHIFT )
+            {
+               event.arg1  = HIDKeysShifted[ activeKeys[i] ];
+            }
+            else
+            {
+               event.arg1  = HIDkeys[ activeKeys[i] ];               
+            }
+            event.arg2  = shiftState;
+            event.arg3  = activeKeys[i];
+            event.obj   = NULL;
+            
+            osPutUIEvent( &event );
 
-					//generate keypress event
-					event.type	= OS_EVENT_TYPE_KEYBOARD_KEYPRESS;
-					
-					if( shiftState & SST_SHIFT )
-					{
-						event.arg1	= HIDKeysShifted[ keys[i] ];
-					}
-					else
-					{
-						event.arg1	= HIDkeys[ keys[i] ];					
-					}
-					event.arg2	= shiftState;
-					event.arg3	= 0;
-					event.obj	= NULL;
-					
-					osPutUIEvent( &event );
+            //check if that was last pressed key (for key repeat)
+            if( activeKeys[i] == lastPressedKeyCode )
+            {
+               //clear last pressed key
+               lastPressedKeyCode         = 0;
+               lastPressedKeyRepeatTime   = 0xffffffff;
+            }
 
-				}		
-		
-			}
-		}
-	}
-	
+            activeKeys[i] = 0;
 
-	return 0;
+         }
+      }
+   }
+   
+   //check for key press
+   for( i = 0; i < sizeof( keys ); i++ )
+   {
+      if( keys[i] != 0 )
+      {
+         //we have a scancode
+      
+         //check if already pressed
+         pos = findInArray( keys[i], activeKeys, sizeof( activeKeys ) );
+      
+         if( pos == -1 )
+         {
+            //key is not in activekeys, so we have a keydown event
+
+            //store key value
+            //find empty slot
+            pos = findInArray( 0, activeKeys, sizeof( activeKeys ) );
+            if( pos == -1 )
+            {
+               //error - not free slots, abort
+            }
+            else
+            {
+               //save key code
+               activeKeys[pos] = keys[i];
+
+               //generate keypress event
+               event.type  = OS_EVENT_TYPE_KEYBOARD_KEYPRESS;
+               
+               if( shiftState & SST_SHIFT )
+               {
+                  event.arg1  = HIDKeysShifted[ keys[i] ];
+               }
+               else
+               {
+                  event.arg1  = HIDkeys[ keys[i] ];               
+               }
+               event.arg2  = shiftState;
+               event.arg3  = keys[i];
+               event.obj   = NULL;
+               
+               osPutUIEvent( &event );
+
+               //store last pressed key code/time
+
+               lastPressedKeyRepeatTime   = getTicks() + USBHID_KEYREPEAT_DELAY;
+               lastPressedKeyCode         = keys[i];
+
+            }     
+      
+         }
+      }
+   }
+   
+
+   return 0;
 }
 
-
-int usbHIDHandleEvents( void )
+static ulong usbHIDKeyRepeatCheck()
 {
-	ulong currKeys;
-	ulong lastKeys;
-	
-	if( ! ( usbhost->usbHidKeyboardStatus & 1 ) )
-	{
-		while( ! ( usbhost->usbHidKeyboardStatus & 1 ))
-		{
-			currKeys = usbhost->usbHidKeyboardData;
-			usbHIDRxMain( currKeys );
-		}
-			
-/*		lastKeys = bsp->usbHidKeyboardData;
-		if( lastKeys != currKeys )
-		{
-			usbHIDRxMain( lastKeys );
-		}
-		*/
-	}
-	
-	return 0;
+   tosUIEvent  event;
+ 
+   //do we have last pressed key?
+   if( lastPressedKeyCode != 0 )
+   {
+      //check for key repeat timeout
+
+      if( getTicks() >= lastPressedKeyRepeatTime )
+      {
+
+         lastPressedKeyRepeatTime   = getTicks() + USBHID_KEYREPEAT_RATE;
+
+         //generate keypress event
+         event.type  = OS_EVENT_TYPE_KEYBOARD_KEYPRESS;
+         
+         if( shiftState & SST_SHIFT )
+         {
+            event.arg1  = HIDKeysShifted[ lastPressedKeyCode ];
+         }
+         else
+         {
+            event.arg1  = HIDkeys[ lastPressedKeyCode ];               
+         }
+         event.arg2  = shiftState;
+         event.arg3  = lastPressedKeyCode;
+         event.obj   = NULL;
+         
+         osPutUIEvent( &event );
+
+      }
+   }
+
+   return 0;
+}
+
+ulong usbHIDHandleEvents( void )
+{
+   ulong currKeys;
+   ulong lastKeys;
+   
+   if( ! ( usbhost->usbHidKeyboardStatus & 1 ) )
+   {
+      while( ! ( usbhost->usbHidKeyboardStatus & 1 ))
+      {
+         currKeys = usbhost->usbHidKeyboardData;
+         usbHIDRxMain( currKeys );
+      }
+   }
+   else
+   {
+      //do keyrepeat check
+      usbHIDKeyRepeatCheck();
+
+   }   
+   return 0;
 }

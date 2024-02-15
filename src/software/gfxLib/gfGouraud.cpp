@@ -186,7 +186,7 @@ ulong gfGouraudDrawTexturedTriangleZBufferBlt( tgfBitmap *bmp, tgfBitmap *zBuffe
 	blt->bltTransferWidth	= 320;			//screen size
 	blt->bltTransferHeight	= 240;
 
-	blt->bltDstModulo		= 320;			//screen modulo
+	blt->bltDstModulo		= 512;			//screen modulo
 
 
 	//pass triangle coordinates/texture coordinates to gouraud hardware
@@ -260,7 +260,7 @@ ulong gfGouraudDrawTriangleZBufferBlt( tgfBitmap *bmp, tgfBitmap *zBuffer, tgfTr
 	blt->bltTransferWidth	= 320;			//screen size
 	blt->bltTransferHeight	= 240;
 
-	blt->bltDstModulo		= 320;			//screen modulo
+	blt->bltDstModulo		= 512;			//screen modulo
 
 
 	//pass triangle coordinates/texture coordinates to gouraud hardware

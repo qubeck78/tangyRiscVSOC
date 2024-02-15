@@ -5,9 +5,14 @@
 
 #include "../gfxLib/osUIEvents.h"
 
+//1000ms key repeat delay
+#define USBHID_KEYREPEAT_DELAY   1000
+
+//8 keypresses per second while repeating last pressed key
+#define USBHID_KEYREPEAT_RATE    128
 
 
-int usbHIDInit( void );
-int usbHIDHandleEvents( void );
+ulong usbHIDInit( void );
+ulong usbHIDHandleEvents( void );
 
 #endif
