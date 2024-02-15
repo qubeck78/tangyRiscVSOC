@@ -28,8 +28,8 @@
 -clkout_bypass false
 -en_clkoutp true
 -clkoutp_bypass false
--psda_sel 10
--dutyda_sel 8
+-psda_sel 13
+-dutyda_sel 13
 -en_clkoutd true
 -clkoutd_bypass false
 -clkoutd_src CLKOUT
