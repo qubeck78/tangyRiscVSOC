@@ -802,7 +802,7 @@ int objvView( char* fileName )
 		objvDisplayObj( &screen2 );	 
 
 		
-		if( !osGetUIEvent( &event ) )
+		while( !osGetUIEvent( &event ) )
 		{
 
 			if( event.type == OS_EVENT_TYPE_KEYBOARD_KEYPRESS )

@@ -42,7 +42,7 @@ int uiDrawStatusBar()
    toSetCursorPos( &con, 0, 0 );
    con.textAttributes   = 0xf0;
 
-   toPrintF( &con, ( char* )"SHELL B20240106                         " );
+   toPrintF( &con, ( char* )"SHELL B20240215                         " );
 
 
    return rv;
