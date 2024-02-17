@@ -181,7 +181,7 @@ port map(
         wrea    => '0',
         
         resetb  => reset,
-        clkb    => clock,
+        clkb    => clockSdram,
         adb     => ch0BufRamWrA,
         dinb    => ch0BufRamDIn,
         --doutb

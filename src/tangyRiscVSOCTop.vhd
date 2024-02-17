@@ -48,6 +48,12 @@ port(
     dviEdidClk:         inout std_logic;
     dviEdidDat:         inout std_logic;
 	
+    --i2s
+    i2sSDMode:          out std_logic;
+    i2sBClk:            out std_logic;
+    i2sLRCk:            out std_logic;
+    i2sDOut:            out std_logic;
+       
 	--ext uart
 	extUartTx:	        out std_logic;
 	extUartRx:	        in std_logic;
@@ -654,6 +660,10 @@ signal   fpAluReady:       std_logic;
 
 begin
 
+    i2sSDMode   <= '1';
+    i2sBClk     <= '0';
+    i2sLRCk     <= '0';
+    i2sDOut     <= '0';
 
 -- reset logic based on pll lock
 
