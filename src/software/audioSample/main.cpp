@@ -20,11 +20,14 @@
 extern tgfTextOverlay	 con;
 
 tgfBitmap 			 	 screen1;
+tgfBitmap				 background;
 
-ulong	audI;
+ulong						 audI;
+short						*audioData;
+ulong						 audioDataLength;
 
 
-short					sinT[512];
+short						 sinT[512];
 
 
 int animLeds( int j )
@@ -110,27 +113,18 @@ ulong init()
 
 short audioGenSample()
 {
-	long 	sample;
 	short rv;
 
+	rv = audioData[ audI >> 1 ];
 
-//	sample = sinT[ audI % 512 ];
-	sample = ( sinT[ audI % 512 ] * sinT[ ( audI / 4800 ) % 256 ] ) / 16384;
+	audI += 1;
 
-	audI += 11;
-
-	if( sample < -32768 )
+	if( audI > ( audioDataLength ) )
 	{
-		rv = 32768;
+		audI = 0;
+		toPrint( &con, (char*) "." );
 	}
-	else if( sample > 32767 )
-	{
-		rv = 32767;
-	}
-	else
-	{
-		rv = sample;
-	}
+	
 
 	return rv;
 
@@ -157,8 +151,6 @@ int audioTestMain()
 		aud->audioFiFoData = fifoData;
 	}
 
-	//toPrint( &con, "." );
-
 	return 0;
 }
 
@@ -170,11 +162,52 @@ int main()
 	
 	volatile int 	j;
 	tosUIEvent		event; 
+  	tosFile        in;
+  	ulong				nbr;
 
 	audI = 0;
 	
 	init();
-	toPrint( &con, (char*) "Audio test\n\n" );
+
+	toPrint( &con, (char*) "Audio sample test: " );
+
+	rv = gfLoadBitmapFS( &background, (char*) "0:/snd/interloper.gbm" );
+	if( !rv )
+	{
+		gfBlitBitmap( &screen1, &background, 0, 0 );
+		osFree( background.buffer );
+		
+		background.buffer = NULL;
+	}
+
+
+	audioDataLength = 2862184;
+
+	audioData = (short*)osAlloc( audioDataLength, OS_ALLOC_MEMF_CHIP );
+
+	if( !audioData )
+	{
+		toPrint( &con, (char*) "Error, can't alloc ram for sample\n" );
+
+		do{}while( 1 );
+	}
+
+	if( osFOpen( &in, (char*)"0:/snd/interloper.raw", OS_FILE_READ ) )
+	{
+		toPrint( &con, (char*) "Error, can't open snd/interloper.raw  file\n" );
+
+		do{}while( 1 );
+
+	}
+
+	toPrint( &con, (char*)"loading, this is going to take a moment... " );
+
+	osFRead( &in, (uchar*)audioData, audioDataLength, &nbr );
+
+	osFClose( &in );
+
+	toPrint( &con, (char*)"ok\n\nCarbon Based Lifeforms - Interloper ( clip )\n24kHz mono, 16-bit\n" );
+
 
 	do
 	{
