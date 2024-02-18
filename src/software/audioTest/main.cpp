@@ -110,18 +110,29 @@ ulong init()
 
 short audioGenSample()
 {
-	short sample;
+	long 	sample;
+	short rv;
 
-/*	sample = audI & 0xffff;
-	audI += 1000;
-*/
 
-	sample = sinT[ audI % 512 ];
+//	sample = sinT[ audI % 512 ];
+	sample = ( sinT[ audI % 512 ] * sinT[ ( audI / 4800 ) % 256 ] ) / 16384;
 
 	audI += 11;
 
+	if( sample < -32768 )
+	{
+		rv = 32768;
+	}
+	else if( sample > 32767 )
+	{
+		rv = 32767;
+	}
+	else
+	{
+		rv = sample;
+	}
 
-	return sample;
+	return rv;
 
 }
 
