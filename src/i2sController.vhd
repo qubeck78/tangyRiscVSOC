@@ -138,18 +138,20 @@ begin
                     when x"00" =>
                     
                         dout  <= ( others => '0' );
---                           
---                           if wr = '1' then
---                           
---                              fpA <= din;
---                              
---                           end if;
+                           
+                        if wr = '1' then
+
+                            fifoDIn <= din;
+                            fifoWr  <= '1';
+
+                        end if;
 
                         ready <= '1';
 
-                    --0x04 rw   audioFiFoStatus                       
+                    --0x04 r-   audioFiFoStatus                       
                     when x"01" =>
 
+                        dout    <= x"0000000" & '0' & fifoFull & fifoAlmostEmpty & fifoEmpty;
                         ready   <= '1';
 
                     --0x08 rw   i2sClockConfig                       
@@ -181,6 +183,9 @@ begin
                        
            
            when rsWaitForBusCycleEnd =>
+
+              --clear fifo write
+              fifoWr  <= '0';
            
               --wait for bus cycle to end
               if ce = '0' then
@@ -262,6 +267,8 @@ begin
             case senderState is
 
                 when i2s0 =>
+
+                    fifoRd      <= '0';
 
                     i2sDOut     <= i2sTxReg( 31 );
 
@@ -454,7 +461,15 @@ begin
                     i2sDOut     <= i2sTxReg( 0 );
                     i2sLRCk     <= '0';
 
-                    --todo: latch new data to i2sTxReg
+                    --latch new data to i2sTxReg
+                    i2sTxReg    <= fifoDOut;
+
+                    --trigger next data read
+                    if fifoEmpty = '0' then
+
+                        fifoRd  <= '1';
+
+                    end if;
 
                     senderState <= i2s0;
 
