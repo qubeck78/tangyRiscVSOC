@@ -221,6 +221,17 @@ typedef struct __SPI_REGISTERS_T
 
 extern _SPI_REGISTERS_T *spi0;
 
+typedef struct __AUDIO_REGISTERS_T
+{
+    volatile ulong audioFiFoData;
+    volatile ulong audioFiFoStatus;
+    volatile ulong i2sClockConfig;
+    volatile ulong fifoReadConfig;
+
+}_AUDIO_REGISTERS_T;
+
+extern _AUDIO_REGISTERS_T *aud;
+
 
 int     bspInit( void );
 int     randomNumber( void );

@@ -12,6 +12,7 @@ _BLITTER_REGISTERS_T *blt       = ( _BLITTER_REGISTERS_T *) 0xf0200000; //blitte
 _USBHOST_REGISTERS_T *usbhost   = ( _USBHOST_REGISTERS_T *) 0xf0300000; //hid usb host base address
 _UART_REGISTERS_T *uart0        = ( _UART_REGISTERS_T *)    0xf0400000; //uart 0 base address
 _SPI_REGISTERS_T *spi0          = ( _SPI_REGISTERS_T *)     0xf0500000; //spi 0 base address
+_AUDIO_REGISTERS_T *aud         = ( _AUDIO_REGISTERS_T*)    0xf0600000; //i2s audio base address
 
 
 void (*bootLoaderEntry)(void) = (void(*)())0x0; 
