@@ -124,6 +124,26 @@ component gfxBufRam
     );
 end component;
 
+
+component inputSync is
+
+generic(
+
+    inputWidth              : integer := 1
+
+);
+
+port(
+
+    clock:                          in  std_logic;
+
+    signalInput:                    in  std_logic_vector( inputWidth - 1 downto 0 );
+    signalOutput:                   out std_logic_vector( inputWidth - 1 downto 0 )
+
+);
+
+end component;
+
 --signals
 
 --gowin sdram controller signals
@@ -163,9 +183,23 @@ signal   ch0DmaBufPointer:       std_logic_vector( 8 downto 0 );
 --ch0 doesn't have handshake, so requests have to be latched
 signal   ch0DmaRequestLatched:   std_logic_vector( 1 downto 0 );
 
+signal  ch0DmaPointerResetSync:  std_logic;
+
+
 begin
 
---clock configuration
+-- place ch0DmaPointerReset sync as it is generated with another clock
+inputSyncInst:inputSync
+generic map(
+    inputWidth  => 1
+)
+port map(
+    clock               => clock,
+    signalInput( 0 )    => ch0DmaPointerReset,
+    signalOutput( 0 )   => ch0DmaPointerResetSync
+);
+
+
 
 -- place ch0 buffer dual port ram
 gfxBufRAMInst: gfxBufRam
@@ -285,7 +319,7 @@ begin
             end if;
      
              --reset ch0 dma pointer if requested
-            if ch0DmaPointerReset = '1' then
+            if ch0DmaPointerResetSync = '1' then
              
                 ch0DmaPointer  <= ch0DmaPointerStart;
                 

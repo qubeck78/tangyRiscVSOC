@@ -1,0 +1,35 @@
+[General]
+ipc_version=4
+file=i2sControllerFifo
+module=i2sControllerFifo
+target_device=gw2ar18c-000
+type=fifo_hs
+version=1.0
+
+[Config]
+AlmostEmptyFlag=true
+AlmostEmptyFlagItem=Empty_Single Threshold Constant Parameter
+AlmostFullFlag=false
+AlmostFullFlagItem=Full_Dual Threshold Constant Parameter
+BSRAM=false
+ControlledByRdEn=false
+ECCSelected=false
+EmptyClear=1
+EmptySet=512
+EnReset=false
+FirstWordFallThrough=true
+FullClear=1
+FullSet=512
+LANG=1
+OutputRegistersSelected=false
+REG=false
+ReadDataNum=false
+ReadDataWidth=32
+ReadDepth=1024
+ResetSynchronization=false
+SSRAM=true
+StandardFIFO=false
+Synthesis_tool=GowinSynthesis
+WriteDataNum=false
+WriteDataWidth=32
+WriteDepth=1024
