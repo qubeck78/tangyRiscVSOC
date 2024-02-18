@@ -124,6 +124,7 @@ short audioGenSample()
 		audI = 0;
 		toPrint( &con, (char*) "." );
 	}
+	
 
 	return rv;
 
