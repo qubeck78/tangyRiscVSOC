@@ -6,6 +6,7 @@ Contains:
 - VGA framebuffer ( 565 color gfx modes + text overlay ), DVI video output
 - 2D blitter with alpha channel and bitmap scaling 
 - 3D gouraud hw accelerator with texture and light support
+- I2S audio controller with fifo
 - Memory mapped floating point ALU 
 - Serial interface for program upload
 - SPI interface - SD card support 
