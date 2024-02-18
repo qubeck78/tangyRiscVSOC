@@ -25,6 +25,8 @@
         <File path="src/gouraudIterator.vhd" type="file.vhdl" enable="1"/>
         <File path="src/gouraudIterator16.vhd" type="file.vhdl" enable="1"/>
         <File path="src/gouraudWeight.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/i2sController.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/i2sControllerFifo/i2sControllerFifo.vhd" type="file.vhdl" enable="1"/>
         <File path="src/keyboardFifo/keyboardFifo.vhd" type="file.vhdl" enable="1"/>
         <File path="src/pixelAlpha.vhd" type="file.vhdl" enable="1"/>
         <File path="src/pixelGenGfx.vhd" type="file.vhdl" enable="1"/>

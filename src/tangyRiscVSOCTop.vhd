@@ -468,6 +468,33 @@ port(
 
 end component;
 
+
+-- i2s ( audio ) controller
+component i2sController is
+port(
+
+    --cpu interface
+    
+    reset:      in  std_logic;
+    clock:      in  std_logic;
+    a:          in  std_logic_vector( 15 downto 0 );
+    din:        in  std_logic_vector( 31 downto 0 );
+    dout:       out std_logic_vector( 31 downto 0 );
+	
+    ce:         in  std_logic;
+    wr:         in  std_logic;
+    dataMask:   in  std_logic_vector( 3 downto 0 );
+	
+    ready:      out	std_logic;
+	
+    --i2s interface
+	
+    i2sBClk:    out std_logic;
+    i2sLRCk:    out std_logic;
+    i2sDOut:    out std_logic
+);
+end component;
+
 -- signals
 
 -- clocks
@@ -658,12 +685,14 @@ signal   fpAluCE:          std_logic;
 signal   fpAluDoutForCPU:  std_logic_vector( 31 downto 0 );
 signal   fpAluReady:       std_logic;
 
+-- i2s controller signals
+signal  i2sControllerClock: std_logic;
+signal  i2sCE:              std_logic;
+signal  i2sDoutForCPU:      std_logic_vector( 31 downto 0 );
+signal  i2sReady:           std_logic;
+
 begin
 
-    i2sSDMode   <= '1';
-    i2sBClk     <= '0';
-    i2sLRCk     <= '0';
-    i2sDOut     <= '0';
 
 -- reset logic based on pll lock
 
@@ -716,9 +745,12 @@ begin
 --blitter clock
     blitterClock        <= clkd2_80;
 
-
 --floating point memory mapped alu clock
     fpaluClock          <= clkd2_80;
+
+--i2s controller clock
+    i2sControllerClock  <= clkd2_80;
+
 
 -- leds
     leds    <= gpoRegister( 7 downto 2 ); 
@@ -1060,6 +1092,8 @@ end process;
 
     spiCE             <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"f05" else '0';
 
+    i2sCE             <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"f06" else '0';
+
 --   
 --   sdramCtrlCE       <= '1' when ( cpuMemValid = '1'  ) and cpuAOutFull( 31 downto 28 ) = x"4" else '0';
 --   
@@ -1073,7 +1107,7 @@ end process;
                         else cpuDmaReady when dmaMemoryCE = '1' 
                         else blitterReady when blitterCE = '1' 
                         else fpAluReady when fpAluCE = '1' 
-                        
+                        else i2sReady when i2sCE = '1' 
                         else '1';
 
 
@@ -1090,7 +1124,7 @@ end process;
                         dmaDoutForCPU                             when cpuAOutFull( 31 downto 24 ) = x"20"  else
                         blitterDoutForCPU                         when cpuAOutFull( 31 downto 20 ) = x"f02" else
                         fpAluDoutForCPU                           when cpuAOutFull( 31 downto 20 ) = x"f01" else
-
+                        i2sDoutForCPU                             when cpuAOutFull( 31 downto 20 ) = x"f06" else 
 --                        sdramCtrlDataOutForCPU                    when cpuAOutFull( 31 downto 28 ) = x"4"   else
 
                           x"00000000";
@@ -1496,6 +1530,34 @@ instFastFloatingMathGen: if( instFastFloatingMath = true ) generate
     );
 
 end generate;
+
+-- place i2s controller ( audio )
+
+-- i2s dac enabled 
+i2sSDMode   <= '1';
+
+
+i2sControllerInst:i2sController
+port map(
+
+    --cpu interface
+
+    reset       => reset,
+    clock       => i2sControllerClock,
+    a           => cpuAOut( 15 downto 0 ),
+    din         => cpuDOut,
+    dout        => i2sDoutForCPU,
+    ce          => i2sCE,
+    wr          => cpuWr,
+    dataMask    => cpuDataMask,
+    ready       => i2sReady,
+
+    --i2s interface
+
+    i2sBClk     => i2sBClk,
+    i2sLRCk     => i2sLRCk,
+    i2sDOut     => i2sDOut
+);
 
 --tick timer process
 tickTimer: process( all )
