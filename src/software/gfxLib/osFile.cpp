@@ -680,3 +680,35 @@ ulong osDirRead( tosDir *dir, tosDirItem *dirItem )
 //finfo
 
 }
+
+ulong osFSize( char *path )
+{
+   ulong rv;
+
+   #if defined( _GFXLIB_STM32_FATFS ) || defined( _GFXLIB_MC68K_FATFS ) || defined( _GFXLIB_RISCV_FATFS )
+   
+   FRESULT  rc;
+   FILINFO  fi;
+
+   #endif
+
+   rv = 0;
+
+   #if defined( _GFXLIB_STM32_FATFS ) || defined( _GFXLIB_MC68K_FATFS ) || defined( _GFXLIB_RISCV_FATFS )
+   
+   //lfn not used
+   fi.lfsize   = 0;
+   fi.lfname   = NULL;
+
+   rc = f_stat( (const char*) path, &fi );
+
+   if( rc == FR_OK )
+   {
+      rv = fi.fsize;
+   }
+
+   #endif
+
+
+   return rv;
+}
