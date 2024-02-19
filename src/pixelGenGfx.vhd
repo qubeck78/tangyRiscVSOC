@@ -33,15 +33,17 @@ port(
    
    -- 00 : 320x240x16
    -- 01 : 640x480x16
-   pgVideoMode:      in  std_logic_vector( 1 downto 0 )
+   pgVideoMode:      in  std_logic_vector( 1 downto 0 );
    
+   pgEnabled:        in  std_logic
 );
 
 end pixelGenGfx;
 
 architecture behavior of pixelGenGfx is
 
-type pggState_T is ( m1pre0, m1pre1, m1pre2, m1pre3, m1pre4, m1pre5, m1pre6, m1p0, m1p1, m1p2, m1p3, m1post0, m1post1, m1post2, m1post3, m1hblank,
+type pggState_T is ( mDisabled,
+                     m1pre0, m1pre1, m1pre2, m1pre3, m1pre4, m1pre5, m1pre6, m1p0, m1p1, m1p2, m1p3, m1post0, m1post1, m1post2, m1post3, m1hblank,
                      m2pre0, m2pre1, m2pre2, m2pre3, m2pre4, m2pre5, m2pre6, m2p0, m2p1, m2hblank
 );
 
@@ -69,9 +71,38 @@ begin
             
          else
          
-         
             case pggState is
-            
+                
+               ----------------------------------------------
+               --pixel gen gfx is disabled, 
+               --no dma requests are generated
+               when mDisabled =>
+
+                    pggR <= ( others => '0' );
+                    pggG <= ( others => '0' );
+                    pggB <= ( others => '0' );
+
+                    pggDMARequest  <= "00";
+
+                    if pgEnabled = '1' then
+    
+                        
+                        -- pixel gen gfx has been enabled
+                        -- select state according to gfx mode selected
+
+                        if pgVideoMode = "01" then
+                  
+                            pggState <= m2pre0;
+
+                        else
+
+                            pggState <= m1pre0;
+                     
+                        end if;
+
+
+                    end if;
+
                ----------------------------------------------
                --mode 1: 320x240x16
                --wait for fetch enable
@@ -119,7 +150,13 @@ begin
                      
                   end if;
                
-               
+                  --check if not disabled
+                  if pgEnabled = '0' then
+
+                     pggState    <= mDisabled;
+    
+                  end if;
+
                when m1pre1 =>
                   gfxBufRamRdA   <= pggLineCounter( 1 ) & pggGfxBufAddressCounter( 7 downto 0 );
                   
@@ -291,6 +328,13 @@ begin
                   
                      pggState <= m1pre0;
                      
+                  end if;
+
+                  --check if not disabled
+                  if pgEnabled = '0' then
+
+                     pggState    <= mDisabled;
+    
                   end if;
                
                when m2pre1 =>

@@ -204,7 +204,8 @@ port(
    pgPreFetchLine:   in  std_logic;
    pgFetchEnable:    in  std_logic;
 
-   pgVideoMode:      in  std_logic_vector( 1 downto 0 )
+   pgVideoMode:      in  std_logic_vector( 1 downto 0 );
+   pgEnabled:        in  std_logic
 
    );
 end component;
@@ -557,6 +558,7 @@ signal   videoRamBDout:    std_logic_vector( 15 downto 0 );
 signal   videoRamBA:       std_logic_vector( 13 downto 0 );
 
 -- gfx pixel gen signals
+signal   pgEnabled:        std_logic;
 signal   pggR:             std_logic_vector( 7 downto 0 );
 signal   pggG:             std_logic_vector( 7 downto 0 );
 signal   pggB:             std_logic_vector( 7 downto 0 ); 
@@ -856,35 +858,38 @@ port map(
 
 -- place gfx pixel gen
 
-   pixelGenGfxInst: pixelGenGfx
-   port map(
-      reset             => reset,
-      pggClock          => pgClock,
-      
-      pggR              => pggR,
-      pggG              => pggG,
-      pggB              => pggB,
+pgEnabled   <= '1' when vmMode( 1 downto 0 ) /= "00" else '0';
 
-      --gfx buffer ram
-      gfxBufRamDOut     => gfxBufRamDOut,
-      gfxBufRamRdA      => gfxBufRamRdA,
-   
-      --2 dma requests
-      pggDMARequest     => pggDMARequest,
+pixelGenGfxInst: pixelGenGfx
+port map(
+    reset             => reset,
+    pggClock          => pgClock,
 
-      --sync gen outputs
-      pgVSync           => pgVSync,
-      pgHSync           => pgHSync,
-      pgDe              => pgDe,
-      pgXCount          => pgXCount,
-      pgYCount          => pgYCount,
-      pgDeX             => pgDeX,
-      pgDeY             => pgDeY,
-      pgPreFetchLine    => pgPreFetchLine,
-      pgFetchEnable     => pgFetchEnable,
-      
-      pgVideoMode       => vmMode( 5 downto 4 )
-   );
+    pggR              => pggR,
+    pggG              => pggG,
+    pggB              => pggB,
+
+    --gfx buffer ram
+    gfxBufRamDOut     => gfxBufRamDOut,
+    gfxBufRamRdA      => gfxBufRamRdA,
+
+    --2 dma requests
+    pggDMARequest     => pggDMARequest,
+
+    --sync gen outputs
+    pgVSync           => pgVSync,
+    pgHSync           => pgHSync,
+    pgDe              => pgDe,
+    pgXCount          => pgXCount,
+    pgYCount          => pgYCount,
+    pgDeX             => pgDeX,
+    pgDeY             => pgDeY,
+    pgPreFetchLine    => pgPreFetchLine,
+    pgFetchEnable     => pgFetchEnable,
+
+    pgVideoMode       => vmMode( 5 downto 4 ),
+    pgEnabled         => pgEnabled
+);
 
 --place system ram
 
@@ -1528,6 +1533,11 @@ instFastFloatingMathGen: if( instFastFloatingMath = true ) generate
        
        ready    => fpAluReady
     );
+
+else generate
+
+    fpAluDoutForCPU <= ( others => '0' );
+    fpAluReady      <= '1';
 
 end generate;
 
