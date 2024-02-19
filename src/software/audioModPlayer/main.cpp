@@ -16,13 +16,19 @@
 
 #include "../gfxLib/ff.h" 
 
+//
+//This example uses HxCModPlayer
+//
 //https://github.com/jfdelnero/HxCModPlayer
+//
+
 #include "hxcmod.h"
 
 extern tgfTextOverlay    con;
 
 tgfBitmap             screen1;
-tgfBitmap             background;
+
+char                  modFileName[256];
 
 ulong                 audI;
 short                *audioModData;
@@ -92,6 +98,8 @@ short audioGenSample()
 {
    short rv;
 
+   //audio is downscaled by factor of 2
+
    if( audioBufIdx >= audioBufMaxIdx )
    {
       audioBufIdx = 0;
@@ -144,6 +152,10 @@ int main()
    
    init();
 
+
+   strcpy( modFileName, (char*) "0:/snd/echoing.mod" );
+
+
    toPrint( &con, (char*) "Audio mod test\n\n" );
 
    audioBufIdx    = 0;
@@ -158,7 +170,7 @@ int main()
 
    }
 
-   audioModDataLength = 43926;
+   audioModDataLength = osFSize( modFileName );
 
    audioModData = (short*)osAlloc( audioModDataLength, OS_ALLOC_MEMF_CHIP );
 
@@ -169,7 +181,7 @@ int main()
       do{}while( 1 );
    }
 
-   if( osFOpen( &in, (char*)"0:/snd/echoing.mod", OS_FILE_READ ) )
+   if( osFOpen( &in, modFileName, OS_FILE_READ ) )
    {
       toPrint( &con, (char*) "Error, can't open module file\n" );
 
@@ -177,7 +189,7 @@ int main()
 
    }
 
-   toPrint( &con, (char*)"Loading mod\n" );
+   toPrintF( &con, (char*)"Loading %s ( %d )\n", modFileName, audioModDataLength );
 
    osFRead( &in, (uchar*)audioModData, audioModDataLength, &nbr );
 
@@ -189,7 +201,7 @@ int main()
    hxcmod_setcfg( &modctx, 24000, 0, 0 );
    hxcmod_load( &modctx, (void*)audioModData, audioModDataLength  );
 
-
+   //one sample is 2 bytes long
    hxcmod_fillbuffer( &modctx, audioBuf, audioBufMaxIdx / 2, NULL );
 
    toPrint( &con, (char*)"Playing\n" );
