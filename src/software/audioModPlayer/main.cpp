@@ -37,8 +37,9 @@ ulong                 audioModDataLength;
 modcontext            modctx;
 
 msample              *audioBuf;
+ulong                audioBufLength;
 ulong                audioBufIdx;
-ulong                audioBufMaxIdx;
+ulong                audioBufMaxSamples;
 
 
 int animLeds( int j )
@@ -91,23 +92,27 @@ ulong init()
    }
 
 
+   //config audio
+   //i2s freq 48kHz @ 80Mhz base clock
+   aud->i2sClockConfig = 0x0034001a;
+
+   //fifo read div to 2 ( 24kHz frequency )
+   aud->fifoReadConfig = 0x1;
+
    return rv;
 }
 
-short audioGenSample()
+short inline audioGenSample()
 {
    short rv;
 
-   //audio is downscaled by factor of 2
 
-   if( audioBufIdx >= audioBufMaxIdx )
+   if( audioBufIdx >= audioBufMaxSamples )
    {
       audioBufIdx = 0;
    }
 
-   rv = audioBuf[ ( audioBufIdx >> 1 ) ];
-
-   audioBufIdx++;
+   rv = audioBuf[ audioBufIdx++ ];
 
    return rv;
 
@@ -140,8 +145,8 @@ int audioTestMain()
 
 int main()
 {
-   int         i;
-   int         rv;
+   int            i;
+   int            rv;
    
    volatile int   j;
    tosUIEvent     event; 
@@ -158,10 +163,13 @@ int main()
 
    toPrint( &con, (char*) "Audio mod test\n\n" );
 
-   audioBufIdx    = 0;
-   audioBufMaxIdx = 1048576 * 6;
+   audioBufIdx          = 0;
+   audioBufLength       = 1048576 * 6;
 
-   audioBuf = (msample*)osAlloc( audioBufMaxIdx, OS_ALLOC_MEMF_CHIP );
+   audioBufMaxSamples   = audioBufLength / 2;
+
+   audioBuf = (msample*)osAlloc( audioBufLength, OS_ALLOC_MEMF_CHIP );
+
    if( !audioBuf )
    {
       toPrint( &con, (char*) "Error, can't alloc ram for audio buffer\n" );
@@ -202,7 +210,7 @@ int main()
    hxcmod_load( &modctx, (void*)audioModData, audioModDataLength  );
 
    //one sample is 2 bytes long
-   hxcmod_fillbuffer( &modctx, audioBuf, audioBufMaxIdx / 2, NULL );
+   hxcmod_fillbuffer( &modctx, audioBuf, audioBufMaxSamples, NULL );
 
    toPrint( &con, (char*)"Playing\n" );
 
