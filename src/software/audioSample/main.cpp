@@ -25,6 +25,8 @@ tgfBitmap				 background;
 ulong						 audI;
 short						*audioData;
 ulong						 audioDataLength;
+ulong						 audioNumSamples;
+ulong						 audioLoops;
 
 
 short						 sinT[512];
@@ -108,21 +110,28 @@ ulong init()
 	}
 
 
+	//config audio
+	//i2s freq 48kHz @ 80Mhz base clock
+	aud->i2sClockConfig = 0x0034001a;
+
+	//fifo read div to 2 ( 24kHz frequency )
+	aud->fifoReadConfig = 0x1;
+
 	return rv;
 }
 
-short audioGenSample()
+short inline audioGenSample()
 {
 	short rv;
 
-	rv = audioData[ audI >> 1 ];
+	rv = audioData[ audI++ ];
 
-	audI += 1;
-
-	if( audI > ( audioDataLength ) )
+	if( audI >= audioNumSamples )
 	{
+		
 		audI = 0;
-		toPrint( &con, (char*) "." );
+		animLeds( audioLoops++ );
+
 	}
 	
 
@@ -165,8 +174,9 @@ int main()
   	tosFile        in;
   	ulong				nbr;
 
-	audI = 0;
-	
+	audI 			= 0;
+	audioLoops	= 0;
+
 	init();
 
 	toPrint( &con, (char*) "Audio sample test: " );
@@ -181,7 +191,9 @@ int main()
 	}
 
 
-	audioDataLength = 2862184;
+	audioDataLength = osFSize( (char*)"0:/snd/interloper.raw" );
+	audioNumSamples = audioDataLength / 2;
+
 
 	audioData = (short*)osAlloc( audioDataLength, OS_ALLOC_MEMF_CHIP );
 

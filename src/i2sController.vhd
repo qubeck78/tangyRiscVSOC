@@ -84,6 +84,9 @@ signal  fifoFull:               std_logic;
 signal  fifoRd:                 std_logic;
 signal  fifoDOut:               std_logic_vector( 31 downto 0 );
 
+signal  fifoReadCounter:        std_logic_vector( 7 downto 0 );
+signal  fifoReadDiv:            std_logic_vector( 7 downto 0 );
+
 begin
 
 
@@ -117,8 +120,11 @@ begin
         fifoWr          <= '0';
         
         --regs default values
+
+        --48KHz, fifo read div = 1
         i2sClockGenMax  <= x"0034";     -- 80000000 / 52 ~ 1536000
         i2sClockGenMid  <= x"001a";     -- toggle clk val in middle     
+        fifoReadDiv     <= x"00";       
 
      else
      
@@ -169,6 +175,17 @@ begin
                         ready   <= '1';
 
                     --0x0c rw   fifoReadConfig                    
+                    when x"03" =>
+
+                        dout    <= x"000000" & fifoReadDiv;
+
+                        if wr = '1' then
+
+                            fifoReadDiv <= din( 7 downto 0 );
+                        
+                        end if;
+
+                        ready   <= '1';
 
                     when others =>
                     
@@ -256,11 +273,13 @@ begin
   
         if reset = '1' then
 
-            i2sTxReg    <= ( others => '0' );
-            senderState <= i2s0;
+            i2sTxReg        <= ( others => '0' );
+            senderState     <= i2s0;
 
-            i2sLRCk     <= '0';
-            i2sDOut     <= '0';
+            i2sLRCk         <= '0';
+            i2sDOut         <= '0';
+    
+            fifoReadCounter <= ( others => '0' );
 
         else
 
@@ -461,13 +480,25 @@ begin
                     i2sDOut     <= i2sTxReg( 0 );
                     i2sLRCk     <= '0';
 
-                    --latch new data to i2sTxReg
-                    i2sTxReg    <= fifoDOut;
+                    --fiforeadcounter allows reading from fifo every n i2s send cycle
+                    --so actual signal frequency will be i2s dac freq / ( fifoReadDiv + 1 )
+                    if fifoReadCounter = x"00" then
 
-                    --trigger next data read
-                    if fifoEmpty = '0' then
+                        --latch new data to i2sTxReg
+                        i2sTxReg    <= fifoDOut;
 
-                        fifoRd  <= '1';
+                        --trigger next data read
+                        if fifoEmpty = '0' then
+
+                            fifoRd  <= '1';
+
+                        end if;
+
+                        fifoReadCounter <= fifoReadDiv;
+
+                    else
+
+                        fifoReadCounter <= fifoReadCounter  - 1;
 
                     end if;
 
