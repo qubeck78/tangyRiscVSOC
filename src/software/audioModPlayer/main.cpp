@@ -26,20 +26,17 @@
 
 extern tgfTextOverlay    con;
 
-tgfBitmap             screen1;
+tgfBitmap                screen;
+tgfBitmap                background;
 
-char                  modFileName[256];
+char                     modFileName[256];
 
-ulong                 audI;
-short                *audioModData;
-ulong                 audioModDataLength;
+short                   *audioModData;
+ulong                    audioModDataLength;
 
-modcontext            modctx;
+modcontext               modctx;
 
-msample              *audioBuf;
-ulong                audioBufLength;
-ulong                audioBufIdx;
-ulong                audioBufMaxSamples;
+
 
 
 int animLeds( int j )
@@ -73,9 +70,31 @@ ulong init()
 
    bspInit();
          
-   setVideoMode( _VIDEOMODE_TEXT80_ONLY );
+   setVideoMode( _VIDEOMODE_320_TEXT80_OVER_GFX );
+
+   toPrint( &con, (char*)"Mod player, initializing...\n" );
+
+   //alloc screen buffer
+   screen.width            = 320;
+   screen.rowWidth         = 512;
+
+   screen.height           = 240;
+   
+   screen.flags            = 0;
+   screen.transparentColor = 0;
+   screen.buffer           = osAlloc( screen.rowWidth * screen.height * 2, OS_ALLOC_MEMF_CHIP ); 
+   
+   if( screen.buffer == NULL )
+   {
+      toPrint( &con, (char*)"\nCan't alloc screen\n" );
+   } 
+   
+   //display first buffer
+   gfDisplayBitmap( &screen );
+
+   gfFillRect( &screen, 0, 0, screen.width - 1, screen.height - 1 , gfColor( 0, 0, 0 ) ); 
       
-   con.textAttributes = 0x0a;
+   con.textAttributes = 0x8f;
 
    //init events queue
    osUIEventsInit();   
@@ -92,30 +111,30 @@ ulong init()
    }
 
 
+   rv = gfLoadBitmapFS( &background, (char*) "0:/snd/catHeadphones.gbm" );
+   if( !rv )
+   {
+      gfBlitBitmap( &screen, &background, 0, 0 );
+      osFree( background.buffer );
+      
+      background.buffer = NULL;
+   }
+
+
    //config audio
    //i2s freq 48kHz @ 80Mhz base clock
    aud->i2sClockConfig = 0x0034001a;
 
-   //fifo read div to 2 ( 24kHz frequency )
-   aud->fifoReadConfig = 0x1;
+   //fifo read div to 3 ( 16kHz frequency )
+   aud->fifoReadConfig = 0x2;
+
+   //init hxcmod
+   hxcmod_init( &modctx );
+
+   //config hxcmod
+   hxcmod_setcfg( &modctx, 16000, 0, 0 );
 
    return rv;
-}
-
-short inline audioGenSample()
-{
-   short rv;
-
-
-   if( audioBufIdx >= audioBufMaxSamples )
-   {
-      audioBufIdx = 0;
-   }
-
-   rv = audioBuf[ audioBufIdx++ ];
-
-   return rv;
-
 }
 
 
@@ -125,19 +144,29 @@ int audioTestMain()
    ulong fifoData;
    ulong i;
 
+   msample audioBuf[ 256 ];
 
-   
-   i = 0;
-
-   while( !( aud->audioFiFoStatus & 4 ) )
+   do
    {
 
-      sample = (ushort)audioGenSample();
+      //one sample is 2 bytes long
+      hxcmod_fillbuffer( &modctx, audioBuf, 256, NULL );
 
-      fifoData = (ushort)sample | ( (ushort)sample << 16 );
+      for( i = 0; i < 256; i++ )
+      {
+         sample = audioBuf[ i ];
+         fifoData =  (ushort)sample << 16;
 
-      aud->audioFiFoData = fifoData;
-   }
+         //wait for free space in fifo
+         while( aud->audioFiFoStatus & 4 );
+         
+         aud->audioFiFoData = fifoData;
+
+
+      }
+
+
+   }while( 1 );
 
    return 0;
 }
@@ -153,30 +182,15 @@ int main()
    tosFile        in;
    ulong          nbr;
 
-   audI = 0;
    
    init();
 
 
-   strcpy( modFileName, (char*) "0:/snd/echoing.mod" );
+//   strcpy( modFileName, (char*) "0:/snd/echoing.mod" );
+//   strcpy( modFileName, (char*) "0:/snd/chill.mod" );
+   strcpy( modFileName, (char*) "0:/snd/elysium.mod" );
 
-
-   toPrint( &con, (char*) "Audio mod test\n\n" );
-
-   audioBufIdx          = 0;
-   audioBufLength       = 1048576 * 6;
-
-   audioBufMaxSamples   = audioBufLength / 2;
-
-   audioBuf = (msample*)osAlloc( audioBufLength, OS_ALLOC_MEMF_CHIP );
-
-   if( !audioBuf )
-   {
-      toPrint( &con, (char*) "Error, can't alloc ram for audio buffer\n" );
-
-      do{}while( 1 );
-
-   }
+ 
 
    audioModDataLength = osFSize( modFileName );
 
@@ -203,18 +217,20 @@ int main()
 
    osFClose( &in );
 
-   toPrint( &con, (char*)"Converting to sample\n" );
 
-   hxcmod_init( &modctx );
-   hxcmod_setcfg( &modctx, 24000, 0, 0 );
    hxcmod_load( &modctx, (void*)audioModData, audioModDataLength  );
 
-   //one sample is 2 bytes long
-   hxcmod_fillbuffer( &modctx, audioBuf, audioBufMaxSamples, NULL );
+   con.textAttributes = 0x0f;
+   
+   toCls( &con );
+   
+   con.textAttributes = 0x8f;
 
-   toPrint( &con, (char*)"Playing\n" );
+   toPrintF( &con, (char*)"Playing %s ( %d )\n", modFileName, audioModDataLength );
 
-   do
+   audioTestMain();
+
+   /*do
    {
 
       audioTestMain();
@@ -234,6 +250,6 @@ int main()
       }
    
    }while( 1 );
-   
+   */
 
 } 
