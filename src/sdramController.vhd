@@ -10,7 +10,7 @@ port(
     clock:      in  std_logic;
     clockSdram: in  std_logic;
 
-    --gfx display mode interface ( ch0 )
+    --gfx display mode interface ( ch0 ) - read only with buffer
     ch0DmaRequest:       in  std_logic_vector( 1 downto 0 );
     ch0DmaPointerStart:  in  std_logic_vector( 20 downto 0 );
     ch0DmaPointerReset:  in  std_logic;
@@ -19,12 +19,12 @@ port(
     ch0BufDout:          out std_logic_vector( 31 downto 0 );
     ch0BufA:             in  std_logic_vector( 8 downto 0 );
    
-   
-    --audio interface ( ch1 )
-   
-    --tbd
-   
-   
+    --audio interface ( ch1 ) - read only
+    ch1DmaRequest:  in  std_logic;
+    ch1A:           in  std_logic_vector( 20 downto 0 );
+    ch1Dout:        out std_logic_vector( 31 downto 0 );
+    ch1Ready:       out std_logic;
+      
     --blitter interface ( ch2 )
     ch2DmaRequest: in  std_logic;
     ch2A:          in  std_logic_vector( 21 downto 0 );

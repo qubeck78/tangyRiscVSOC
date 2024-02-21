@@ -368,10 +368,12 @@ port(
     ch0BufDout:          out std_logic_vector( 31 downto 0 );
     ch0BufA:             in  std_logic_vector( 8 downto 0 );
    
-   
-    --audio interface ( ch1 )
-   
-    --tbd
+      
+    --audio interface ( ch1 ) - read only
+    ch1DmaRequest:  in  std_logic;
+    ch1A:           in  std_logic_vector( 20 downto 0 );
+    ch1Dout:        out std_logic_vector( 31 downto 0 );
+    ch1Ready:       out std_logic;
    
    
     --blitter interface ( ch2 )
@@ -629,6 +631,12 @@ signal   sdramDmaClock:          std_logic;
 signal   gfxBufRamDOut:          std_logic_vector( 31 downto 0 );
 signal   gfxBufRamRdA:           std_logic_vector( 8 downto 0 );
 signal   dmaDisplayPointerStart: std_logic_vector( 20 downto 0 );
+
+-- dma ch1 signals ( audio )
+signal  dmaCh1Request:          std_logic;
+signal  dmaCh1A:                std_logic_vector( 20 downto 0 );
+signal  dmaCh1Dout:             std_logic_vector( 31 downto 0 );
+signal  dmaCh1Ready:            std_logic;
 
 -- dma ch2 signals (blitter)
 signal   dmaCh2Request:          std_logic;
@@ -1440,10 +1448,12 @@ port map(
    
    
     --audio interface ( ch1 )
-   
-    --tbd
-   
-   
+    ch1DmaRequest           => dmaCh1Request,
+    ch1A                    => dmaCh1A,
+    ch1Dout                 => dmaCh1Dout,
+    ch1Ready                => dmaCh1Ready,
+      
+
     --blitter interface ( ch2 )
     ch2DmaRequest           => dmaCh2Request,
     ch2A                    => dmaCh2A,

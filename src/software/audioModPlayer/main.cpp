@@ -72,7 +72,7 @@ ulong init()
          
    setVideoMode( _VIDEOMODE_320_TEXT80_OVER_GFX );
 
-   toPrint( &con, (char*)"Mod player, initializing...\n" );
+   toPrint( &con, (char*)"HxCModPlayer player, initializing...\n" );
 
    //alloc screen buffer
    screen.width            = 320;
@@ -188,8 +188,11 @@ int main()
 
 //   strcpy( modFileName, (char*) "0:/snd/echoing.mod" );
 //   strcpy( modFileName, (char*) "0:/snd/chill.mod" );
-   strcpy( modFileName, (char*) "0:/snd/elysium.mod" );
-
+//   strcpy( modFileName, (char*) "0:/snd/elysium.mod" );
+//   strcpy( modFileName, (char*) "0:/snd/spacedeb.mod" );
+   strcpy( modFileName, (char*) "0:/snd/pillusions.mod" );
+//   strcpy( modFileName, (char*) "0:/snd/odyssey.mod" );
+  
  
 
    audioModDataLength = osFSize( modFileName );
