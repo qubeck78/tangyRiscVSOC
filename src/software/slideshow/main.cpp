@@ -16,20 +16,20 @@
 
 //#define _MODE640
 
-extern BSP_T        *bsp;
+extern BSP_T                *bsp;
 
 
 extern tgfTextOverlay        con;
-tgfBitmap            screen;
-tgfBitmap            background;
-tgfBitmap            fileBmp;
+tgfBitmap                    screen;
+tgfBitmap                    background;
+tgfBitmap                    fileBmp;
 
 
-char buf[128];
-char lfnBuf[ 512 + 16];
+char                         buf[128];
+char                         lfnBuf[ 512 + 16];
 
-tosDir              dir;
-tosDirItem          dirItem;
+tosDir                       dir;
+tosDirItem                   dirItem;
 
 int animLeds( int j )
 {   
@@ -48,20 +48,6 @@ int animLeds( int j )
             
                 break;
 
-/*          case 2:
-            
-                bsp->gpoPort |= 0x00f0;
-                bsp->gpoPort ^= 0x0040;
-
-                break; 
-
-            case 3:
-        
-                bsp->gpoPort |= 0x00f0;
-                bsp->gpoPort ^= 0x0080;
-
-                break;
-*/
         }
         
     return 0;

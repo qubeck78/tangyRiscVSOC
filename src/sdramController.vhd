@@ -10,7 +10,7 @@ port(
     clock:      in  std_logic;
     clockSdram: in  std_logic;
 
-    --gfx display mode interface ( ch0 )
+    --gfx display mode interface ( ch0 ) - read only with buffer
     ch0DmaRequest:       in  std_logic_vector( 1 downto 0 );
     ch0DmaPointerStart:  in  std_logic_vector( 20 downto 0 );
     ch0DmaPointerReset:  in  std_logic;
@@ -19,12 +19,12 @@ port(
     ch0BufDout:          out std_logic_vector( 31 downto 0 );
     ch0BufA:             in  std_logic_vector( 8 downto 0 );
    
-   
-    --audio interface ( ch1 )
-   
-    --tbd
-   
-   
+    --audio interface ( ch1 ) - read only
+    ch1DmaRequest:  in  std_logic;
+    ch1A:           in  std_logic_vector( 20 downto 0 );
+    ch1Dout:        out std_logic_vector( 31 downto 0 );
+    ch1Ready:       out std_logic;
+      
     --blitter interface ( ch2 )
     ch2DmaRequest: in  std_logic;
     ch2A:          in  std_logic_vector( 21 downto 0 );
@@ -125,25 +125,6 @@ component gfxBufRam
 end component;
 
 
-component inputSync is
-
-generic(
-
-    inputWidth              : integer := 1
-
-);
-
-port(
-
-    clock:                          in  std_logic;
-
-    signalInput:                    in  std_logic_vector( inputWidth - 1 downto 0 );
-    signalOutput:                   out std_logic_vector( inputWidth - 1 downto 0 )
-
-);
-
-end component;
-
 --signals
 
 --gowin sdram controller signals
@@ -164,6 +145,7 @@ signal sdrcWrdAck:                  std_logic;
 type  dmaState_T is ( dmaIdle, dmaGfxFetch0, dmaGfxFetch1, dmaGfxFetch2, dmaGfxFetch3, 
                      dmaCpuWrite0, dmaCpuWrite1, 
                      dmaCpuRead0, dmaCpuRead1, 
+                     dmaCh1Read0, dmaCh1Read1,
                      dmaCh2Write0, dmaCh2Write1,   
                      dmaCh2Read0, dmaCh2Read1, 
                      dmaCh2Write32_0, dmaCh2Write32_1, 
@@ -183,22 +165,8 @@ signal   ch0DmaBufPointer:       std_logic_vector( 8 downto 0 );
 --ch0 doesn't have handshake, so requests have to be latched
 signal   ch0DmaRequestLatched:   std_logic_vector( 1 downto 0 );
 
-signal  ch0DmaPointerResetSync:  std_logic;
-
 
 begin
-
--- place ch0DmaPointerReset sync as it is generated with another clock
-inputSyncInst:inputSync
-generic map(
-    inputWidth  => 1
-)
-port map(
-    clock               => clock,
-    signalInput( 0 )    => ch0DmaPointerReset,
-    signalOutput( 0 )   => ch0DmaPointerResetSync
-);
-
 
 
 -- place ch0 buffer dual port ram
@@ -293,6 +261,10 @@ begin
 
             ch0DmaRequestLatched <= "00";
 
+            --ch1 - audio
+            ch1Dout     <= ( others => '0' );
+            ch1Ready    <= '1';
+
             --ch2 - blitter
             ch2Dout     <= ( others => '0' );
             ch2Ready    <= '1';
@@ -319,7 +291,7 @@ begin
             end if;
      
              --reset ch0 dma pointer if requested
-            if ch0DmaPointerResetSync = '1' then
+            if ch0DmaPointerReset = '1' then
              
                 ch0DmaPointer  <= ch0DmaPointerStart;
                 
@@ -351,6 +323,24 @@ begin
                   
                     dmaState <= dmaGfxFetch0;
                 
+                --ch1 - audio
+                elsif ch1DmaRequest = '1' then
+
+                    if sdrcBusyn = '1' then
+    
+                        ch1Ready        <= '0';
+                        sdrcDataLen     <= x"00";
+
+                        sdrcAddr        <= ch1A( 20 downto 0 );
+                        sdrcDqm         <= "0000";  -- d31 downto d0
+
+                         --ch1 is read-only
+
+                        sdrcRdn         <= '0';
+                        dmaState        <= dmaCh1Read0;
+
+                    end if; --sdrcBusyn = '1'
+
                 --ch2 - blitter
                 --ch2 request 
                 elsif ch2DmaRequest = '1' then
@@ -553,6 +543,33 @@ begin
 
                 dmaState    <= dmaIdle;
 
+
+            when dmaCh1Read0 =>
+
+                if sdrcWrdAck = '1' then
+
+                    sdrcRdn <= '1';
+
+                end if;
+ 
+                if sdrcRdValid = '1' then 
+            
+                    ch1Dout     <= sdrcDataOut;
+                    
+                    sdrcRdn     <= '1';
+                    ch1Ready    <= '1';
+
+                    dmaState    <= dmaCh1Read1;
+                
+                end if; --sdrcRdValid = '1'
+            
+            when dmaCh1Read1 =>
+
+                if ch1DmaRequest = '0' then
+
+                    dmaState    <= dmaIdle;
+
+                end if;
 
             when dmaCh2Read0 =>
 

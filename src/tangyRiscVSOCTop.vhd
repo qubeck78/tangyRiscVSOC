@@ -210,6 +210,24 @@ port(
    );
 end component;
 
+
+component inputSync is
+generic(
+
+    inputWidth              : integer := 1
+
+);
+
+port(
+
+    clock:                          in  std_logic;
+
+    signalInput:                    in  std_logic_vector( inputWidth - 1 downto 0 );
+    signalOutput:                   out std_logic_vector( inputWidth - 1 downto 0 )
+
+);
+end component;
+
 component systemRam
     port (
         douta:          out std_logic_vector(31 downto 0);
@@ -368,10 +386,12 @@ port(
     ch0BufDout:          out std_logic_vector( 31 downto 0 );
     ch0BufA:             in  std_logic_vector( 8 downto 0 );
    
-   
-    --audio interface ( ch1 )
-   
-    --tbd
+      
+    --audio interface ( ch1 ) - read only
+    ch1DmaRequest:  in  std_logic;
+    ch1A:           in  std_logic_vector( 20 downto 0 );
+    ch1Dout:        out std_logic_vector( 31 downto 0 );
+    ch1Ready:       out std_logic;
    
    
     --blitter interface ( ch2 )
@@ -475,7 +495,6 @@ component i2sController is
 port(
 
     --cpu interface
-    
     reset:      in  std_logic;
     clock:      in  std_logic;
     a:          in  std_logic_vector( 15 downto 0 );
@@ -488,8 +507,13 @@ port(
 	
     ready:      out	std_logic;
 	
-    --i2s interface
-	
+    --dma interface
+    dmaRequest: out std_logic;
+    dmaA:       out std_logic_vector( 20 downto 0 );
+    dmaDin:     in  std_logic_vector( 31 downto 0 );
+    dmaReady:   in  std_logic;
+
+    --i2s interface	
     i2sBClk:    out std_logic;
     i2sLRCk:    out std_logic;
     i2sDOut:    out std_logic
@@ -556,6 +580,9 @@ signal   pgPreFetchLine:   std_logic;
 signal   pgFetchEnable:    std_logic;
 signal   videoRamBDout:    std_logic_vector( 15 downto 0 );
 signal   videoRamBA:       std_logic_vector( 13 downto 0 );
+
+-- vsync signal synchronised to cpu clock domain
+signal   pgVSyncClkD2:     std_logic;
 
 -- gfx pixel gen signals
 signal   pgEnabled:        std_logic;
@@ -630,6 +657,12 @@ signal   gfxBufRamDOut:          std_logic_vector( 31 downto 0 );
 signal   gfxBufRamRdA:           std_logic_vector( 8 downto 0 );
 signal   dmaDisplayPointerStart: std_logic_vector( 20 downto 0 );
 
+-- dma ch1 signals ( audio )
+signal  dmaCh1Request:          std_logic;
+signal  dmaCh1A:                std_logic_vector( 20 downto 0 );
+signal  dmaCh1Dout:             std_logic_vector( 31 downto 0 );
+signal  dmaCh1Ready:            std_logic;
+
 -- dma ch2 signals (blitter)
 signal   dmaCh2Request:          std_logic;
 signal   dmaCh2Ready:            std_logic;
@@ -692,6 +725,7 @@ signal  i2sControllerClock: std_logic;
 signal  i2sCE:              std_logic;
 signal  i2sDoutForCPU:      std_logic_vector( 31 downto 0 );
 signal  i2sReady:           std_logic;
+
 
 begin
 
@@ -855,6 +889,20 @@ port map(
     pgVideoMode       => vmMode( 3 downto 2 )
         
 );   
+
+-- place vsync signal synchroniser
+
+pgVsyncInputSyncInst:inputSync
+generic map(
+    inputWidth  => 1
+)
+port map(
+    clock               => clkd2_80,
+    signalInput( 0 )    => pgVSync,
+    signalOutput( 0 )   => pgVSyncClkD2
+);
+
+
 
 -- place gfx pixel gen
 
@@ -1432,7 +1480,7 @@ port map(
     --gfx display mode interface ( ch0 )
     ch0DmaRequest           => pggDMARequest,
     ch0DmaPointerStart      => dmaDisplayPointerStart,
-    ch0DmaPointerReset      => pgVSync,
+    ch0DmaPointerReset      => pgVSyncClkD2,
    
     ch0BufClk               => not pgClock,
     ch0BufDout              => gfxBufRamDOut,
@@ -1440,10 +1488,12 @@ port map(
    
    
     --audio interface ( ch1 )
-   
-    --tbd
-   
-   
+    ch1DmaRequest           => dmaCh1Request,
+    ch1A                    => dmaCh1A,
+    ch1Dout                 => dmaCh1Dout,
+    ch1Ready                => dmaCh1Ready,
+      
+
     --blitter interface ( ch2 )
     ch2DmaRequest           => dmaCh2Request,
     ch2A                    => dmaCh2A,
@@ -1551,7 +1601,6 @@ i2sControllerInst:i2sController
 port map(
 
     --cpu interface
-
     reset       => reset,
     clock       => i2sControllerClock,
     a           => cpuAOut( 15 downto 0 ),
@@ -1562,8 +1611,13 @@ port map(
     dataMask    => cpuDataMask,
     ready       => i2sReady,
 
-    --i2s interface
+     --dma interface
+    dmaRequest  => dmaCh1Request,
+    dmaA        => dmaCh1A,
+    dmaDin      => dmaCh1Dout,
+    dmaReady    => dmaCh1Ready,
 
+    --i2s interface
     i2sBClk     => i2sBClk,
     i2sLRCk     => i2sLRCk,
     i2sDOut     => i2sDOut
@@ -1623,10 +1677,10 @@ begin
          
       else
       
-         frameTimerPgPrvVSync <= pgVSync;
+         frameTimerPgPrvVSync <= pgVSyncClkD2;
          
          
-         if frameTimerPgPrvVSync = '0' and pgVSync = '1' then
+         if frameTimerPgPrvVSync = '0' and pgVSyncClkD2 = '1' then
       
             frameTimerValue <= frameTimerValue + '1';
             
