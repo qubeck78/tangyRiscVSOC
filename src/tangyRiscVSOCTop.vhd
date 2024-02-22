@@ -495,7 +495,6 @@ component i2sController is
 port(
 
     --cpu interface
-    
     reset:      in  std_logic;
     clock:      in  std_logic;
     a:          in  std_logic_vector( 15 downto 0 );
@@ -508,8 +507,13 @@ port(
 	
     ready:      out	std_logic;
 	
-    --i2s interface
-	
+    --dma interface
+    dmaRequest: out std_logic;
+    dmaA:       out std_logic_vector( 20 downto 0 );
+    dmaDin:     in  std_logic_vector( 31 downto 0 );
+    dmaReady:   in  std_logic;
+
+    --i2s interface	
     i2sBClk:    out std_logic;
     i2sLRCk:    out std_logic;
     i2sDOut:    out std_logic
@@ -721,6 +725,7 @@ signal  i2sControllerClock: std_logic;
 signal  i2sCE:              std_logic;
 signal  i2sDoutForCPU:      std_logic_vector( 31 downto 0 );
 signal  i2sReady:           std_logic;
+
 
 begin
 
@@ -1596,7 +1601,6 @@ i2sControllerInst:i2sController
 port map(
 
     --cpu interface
-
     reset       => reset,
     clock       => i2sControllerClock,
     a           => cpuAOut( 15 downto 0 ),
@@ -1607,8 +1611,13 @@ port map(
     dataMask    => cpuDataMask,
     ready       => i2sReady,
 
-    --i2s interface
+     --dma interface
+    dmaRequest  => dmaCh1Request,
+    dmaA        => dmaCh1A,
+    dmaDin      => dmaCh1Dout,
+    dmaReady    => dmaCh1Ready,
 
+    --i2s interface
     i2sBClk     => i2sBClk,
     i2sLRCk     => i2sLRCk,
     i2sDOut     => i2sDOut

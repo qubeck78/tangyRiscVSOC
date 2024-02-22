@@ -227,6 +227,10 @@ typedef struct __AUDIO_REGISTERS_T
     volatile ulong audioFiFoStatus;
     volatile ulong i2sClockConfig;
     volatile ulong fifoReadConfig;
+    volatile ulong audioDmaConfig;
+    volatile ulong audioDmaStatus;
+    volatile ulong audioDmaPointer;
+    volatile ulong audioDmaLength;
 
 }_AUDIO_REGISTERS_T;
 

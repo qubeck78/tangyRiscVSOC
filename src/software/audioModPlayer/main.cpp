@@ -188,11 +188,16 @@ int main()
 
 //   strcpy( modFileName, (char*) "0:/snd/echoing.mod" );
 //   strcpy( modFileName, (char*) "0:/snd/chill.mod" );
+//   strcpy( modFileName, (char*) "0:/snd/dawn.mod" );
 //   strcpy( modFileName, (char*) "0:/snd/elysium.mod" );
 //   strcpy( modFileName, (char*) "0:/snd/spacedeb.mod" );
-//   strcpy( modFileName, (char*) "0:/snd/pillusions.mod" );
-   strcpy( modFileName, (char*) "0:/snd/odyssey.mod" );
-  
+   strcpy( modFileName, (char*) "0:/snd/pillusions.mod" );
+//   strcpy( modFileName, (char*) "0:/snd/pillusions2.mod" );
+//   strcpy( modFileName, (char*) "0:/snd/odyssey.mod" );
+//   strcpy( modFileName, (char*) "0:/snd/somewhere.mod" );
+//   strcpy( modFileName, (char*) "0:/snd/sundown.mod" );
+//   strcpy( modFileName, (char*) "0:/snd/nemesis.mod" );
+
  
 
    audioModDataLength = osFSize( modFileName );

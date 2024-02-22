@@ -145,6 +145,7 @@ signal sdrcWrdAck:                  std_logic;
 type  dmaState_T is ( dmaIdle, dmaGfxFetch0, dmaGfxFetch1, dmaGfxFetch2, dmaGfxFetch3, 
                      dmaCpuWrite0, dmaCpuWrite1, 
                      dmaCpuRead0, dmaCpuRead1, 
+                     dmaCh1Read0, dmaCh1Read1,
                      dmaCh2Write0, dmaCh2Write1,   
                      dmaCh2Read0, dmaCh2Read1, 
                      dmaCh2Write32_0, dmaCh2Write32_1, 
@@ -260,6 +261,10 @@ begin
 
             ch0DmaRequestLatched <= "00";
 
+            --ch1 - audio
+            ch1Dout     <= ( others => '0' );
+            ch1Ready    <= '1';
+
             --ch2 - blitter
             ch2Dout     <= ( others => '0' );
             ch2Ready    <= '1';
@@ -318,6 +323,24 @@ begin
                   
                     dmaState <= dmaGfxFetch0;
                 
+                --ch1 - audio
+                elsif ch1DmaRequest = '1' then
+
+                    if sdrcBusyn = '1' then
+    
+                        ch1Ready        <= '0';
+                        sdrcDataLen     <= x"00";
+
+                        sdrcAddr        <= ch1A( 20 downto 0 );
+                        sdrcDqm         <= "0000";  -- d31 downto d0
+
+                         --ch1 is read-only
+
+                        sdrcRdn         <= '0';
+                        dmaState        <= dmaCh1Read0;
+
+                    end if; --sdrcBusyn = '1'
+
                 --ch2 - blitter
                 --ch2 request 
                 elsif ch2DmaRequest = '1' then
@@ -520,6 +543,33 @@ begin
 
                 dmaState    <= dmaIdle;
 
+
+            when dmaCh1Read0 =>
+
+                if sdrcWrdAck = '1' then
+
+                    sdrcRdn <= '1';
+
+                end if;
+ 
+                if sdrcRdValid = '1' then 
+            
+                    ch1Dout     <= sdrcDataOut;
+                    
+                    sdrcRdn     <= '1';
+                    ch1Ready    <= '1';
+
+                    dmaState    <= dmaCh1Read1;
+                
+                end if; --sdrcRdValid = '1'
+            
+            when dmaCh1Read1 =>
+
+                if ch1DmaRequest = '0' then
+
+                    dmaState    <= dmaIdle;
+
+                end if;
 
             when dmaCh2Read0 =>
 

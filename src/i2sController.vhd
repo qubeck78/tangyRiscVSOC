@@ -13,7 +13,6 @@ entity i2sController is
 port(
 
     --cpu interface
-    
     reset:      in  std_logic;
     clock:      in  std_logic;
     a:          in  std_logic_vector( 15 downto 0 );
@@ -26,8 +25,14 @@ port(
 	
     ready:      out	std_logic;
 	
+    --dma interface
+    dmaRequest: out std_logic;
+    dmaA:       out std_logic_vector( 20 downto 0 );
+    dmaDin:     in  std_logic_vector( 31 downto 0 );
+    dmaReady:   in  std_logic;
+
+
     --i2s interface
-	
     i2sBClk:    out std_logic;
     i2sLRCk:    out std_logic;
     i2sDOut:    out std_logic
@@ -87,10 +92,43 @@ signal  fifoDOut:               std_logic_vector( 31 downto 0 );
 signal  fifoReadCounter:        std_logic_vector( 7 downto 0 );
 signal  fifoReadDiv:            std_logic_vector( 7 downto 0 );
 
+-- i2s fifo <- cpu
+signal fifoWrCpu:               std_logic;
+signal fifoDinCpu:              std_logic_vector( 31 downto 0 );
+
+-- i2s fifo <- dma
+signal fifoWrDma:               std_logic;
+signal fifoDinDma:              std_logic_vector( 31 downto 0 );
+
+-- i2s dma control signals
+
+type   dmaState_T is    ( dmaDisabled, dmaMode01s0, dmaMode01s1, dmaMode01s2, dmaMode01s3, dmaMode01s4 );
+signal dmaState:                dmaState_T;
+
+
+-- 00 - disabled
+-- 01 - mono (left channel only )
+-- 10 - stereo
+signal dmaMode:                 std_logic_vector( 1 downto 0 );
+signal dmaDataPointerReg:       std_logic_vector( 20 downto 0 );
+signal dmaDataLengthReg:        std_logic_vector( 20 downto 0 );
+
+signal dmaDataPointer:          std_logic_vector( 20 downto 0 );
+signal dmaDataCounter:          std_logic_vector( 20 downto 0 );
+
+signal dmaDataSecondHalf:       std_logic;
+signal dmaFinished:             std_logic;
+signal dmaFinishedClear:        std_logic;
+
 begin
 
 
 -- place audio fifo
+
+--select fifo write source, according to dma mode "00" -> cpu, "01" or "10" -> dma
+fifoDIn <= fifoDInCpu when dmaMode = "00" else fifoDinDma;
+fifoWr  <= fifoWrCpu when dmaMode = "00" else fifoWrDma;
+
 i2sControllerFifoInst: i2sControllerFifo
 port map(
     Data            => fifoDIn,
@@ -116,16 +154,18 @@ begin
         state           <= rsWaitForRegAccess;
 
         --fifo
-        fifoDIn         <= ( others => '0' );
-        fifoWr          <= '0';
+        fifoDInCpu      <= ( others => '0' );
+        fifoWrCpu       <= '0';
         
         --regs default values
 
         --48KHz, fifo read div = 1
-        i2sClockGenMax  <= x"0034";     -- 80000000 / 52 ~ 1536000
-        i2sClockGenMid  <= x"001a";     -- toggle clk val in middle     
-        fifoReadDiv     <= x"00";       
+        i2sClockGenMax      <= x"0034";     -- 80000000 / 52 ~ 1536000
+        i2sClockGenMid      <= x"001a";     -- toggle clk val in middle     
+        fifoReadDiv         <= x"00";       
 
+        dmaMode             <= "00";        -- dma disabled by default
+        dmaFinishedClear    <= '0';
      else
      
         case state is
@@ -147,8 +187,8 @@ begin
                            
                         if wr = '1' then
 
-                            fifoDIn <= din;
-                            fifoWr  <= '1';
+                            fifoDInCpu  <= din;
+                            fifoWrCpu   <= '1';
 
                         end if;
 
@@ -187,6 +227,58 @@ begin
 
                         ready   <= '1';
 
+                    --0x10 rw audioDmaConfig
+                    when x"04" =>
+
+                        dout    <= x"0000000" & "00" & dmaMode;
+
+                        if wr = '1' then
+
+                            dmaMode <= din( 1 downto 0 );
+
+                        end if;
+
+                        ready   <= '1';
+
+                    --0x14 rw audioDmaStatus
+                    when x"05" =>
+
+                        dout    <= x"0000000" & "00" & dmaDataSecondHalf &  dmaFinished;
+
+                        if dmaFinished = '1' then
+
+                            dmaFinishedClear <= '1';
+
+                        end if;
+
+                        ready   <= '1';
+
+                    --0x18 rw audioDmaPointer
+                    when x"06" =>
+
+                        dout    <= x"00" & "000" & dmaDataPointerReg;
+    
+                        if wr = '1' then
+
+                            dmaDataPointerReg   <= din( 20 downto 0 );
+
+                        end if;
+
+                        ready   <= '1';
+
+                    --0x1c rw audioDmaLength
+                    when x"07" =>
+
+                        dout    <= x"00" & "000" & dmaDataLengthReg;
+    
+                        if wr = '1' then
+
+                            dmaDataLengthReg   <= din( 20 downto 0 );
+
+                        end if;
+
+                        ready   <= '1';
+
                     when others =>
                     
                        dout  <= ( others =>'0' );
@@ -201,9 +293,12 @@ begin
            
            when rsWaitForBusCycleEnd =>
 
-              --clear fifo write
-              fifoWr  <= '0';
-           
+              --deassert fifo write
+              fifoWrCpu         <= '0';
+
+              --deassert dma finished clear flag
+              dmaFinishedClear  <= '0';
+
               --wait for bus cycle to end
               if ce = '0' then
               
@@ -227,6 +322,157 @@ begin
 end process;
 
 
+--i2s dma master
+
+i2sDmaMaster: process( all )
+begin
+
+    if rising_edge( clock ) then
+  
+        if reset = '1' then
+
+            --dma     
+            dmaRequest          <= '0';
+            dmaA                <= ( others => '0' );
+
+            dmaDataPointer      <= ( others => '0' );
+            dmaDataCounter      <= ( others => '0' );
+
+            --fifo
+            fifoWrDma           <= '0';
+            fifoDinDma          <= ( others => '0' );
+
+            dmaFinished         <= '0';
+            dmaDataSecondHalf   <= '0';
+
+            dmaState            <= dmaDisabled;
+
+        else
+
+            --check if dmaFinished flag has been read
+            if dmaFinishedClear = '1' then
+
+                dmaFinished <= '0';
+
+            end if;
+
+            --over half of the buffer
+            if dmaDataCounter >= "0" & dmaDataLengthReg( 20 downto 1 ) then 
+
+                dmaDataSecondHalf   <= '1';
+
+            else
+
+                dmaDataSecondHalf   <= '0';
+
+            end if;
+
+            case dmaState is
+
+                when dmaDisabled =>
+
+                    dmaRequest          <= '0';
+                    fifoWrDma           <= '0';
+
+                    dmaDataSecondHalf   <= '0';
+
+                    if dmaMode = "01" then
+
+
+                        dmaDataPointer  <= dmaDataPointerReg;
+                        dmaDataCounter  <= ( others => '0' );
+
+                        dmaState    <= dmaMode01s0;
+
+                    end if;
+
+                when dmaMode01s0 =>
+
+                    if dmaMode /= "01" then
+
+                        dmaState    <= dmaDisabled;
+
+                    else
+
+                        if fifoAlmostEmpty = '1' then
+
+                            -- read data and write 2 samples to fifo
+
+                            dmaA        <= dmaDataPointer;
+                            dmaRequest  <= '1';
+
+                            dmaState    <= dmaMode01s1;
+
+                        end if; --fifoAlmostEmpty = '1'
+
+                    end if; --dmaMode /=, = "01"
+
+                when dmaMode01s1 =>
+
+                    if dmaReady = '0' then
+
+                        dmaRequest  <= '0';
+                        dmaState    <= dmaMode01s2;
+                    end if; 
+
+
+                when dmaMode01s2 =>
+
+                    if dmaReady = '1' then
+
+                        fifoWrDma   <= '1';
+
+                        fifoDinDma  <= dmaDin( 15 downto 0 ) & dmaDin( 15 downto 0 );
+
+                        dmaState    <= dmaMode01s3;
+
+                    end if;
+
+                when dmaMode01s3 =>
+
+                    fifoDinDma  <= dmaDin( 31 downto 16 ) & dmaDin( 31 downto 16 );
+                    dmaState    <= dmaMode01s4;
+    
+                when dmaMode01s4 =>
+
+                    fifoWrDma   <= '0';
+
+                    --check data counter
+                    if dmaDataCounter < dmaDataLengthReg then
+
+                        --next 2 samples
+                        dmaDataCounter  <= dmaDataCounter + 1;
+                        dmaDataPointer  <= dmaDataPointer + 1;
+
+                    else
+
+                        --loop
+
+                        dmaDataCounter  <= ( others => '0' );
+                        dmaDataPointer  <= dmaDataPointerReg;
+
+                        --set dmaFinished flag
+                        dmaFinished     <= '1';
+
+                    end if;
+
+                    dmaState <= dmaMode01s0;
+
+
+                when others =>
+
+                    dmaState    <= dmaDisabled;
+
+            end case; --dmaState is
+
+        end if; --reset = '1' or '0'
+
+    end if; --rising_edge( clock )
+
+end process;
+
+
+--i2s serial sender
 i2sBClk <= i2sClock;
 
 i2sClockGen: process( all )
