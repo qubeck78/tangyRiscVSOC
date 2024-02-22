@@ -210,6 +210,24 @@ port(
    );
 end component;
 
+
+component inputSync is
+generic(
+
+    inputWidth              : integer := 1
+
+);
+
+port(
+
+    clock:                          in  std_logic;
+
+    signalInput:                    in  std_logic_vector( inputWidth - 1 downto 0 );
+    signalOutput:                   out std_logic_vector( inputWidth - 1 downto 0 )
+
+);
+end component;
+
 component systemRam
     port (
         douta:          out std_logic_vector(31 downto 0);
@@ -559,6 +577,9 @@ signal   pgFetchEnable:    std_logic;
 signal   videoRamBDout:    std_logic_vector( 15 downto 0 );
 signal   videoRamBA:       std_logic_vector( 13 downto 0 );
 
+-- vsync signal synchronised to cpu clock domain
+signal   pgVSyncClkD2:     std_logic;
+
 -- gfx pixel gen signals
 signal   pgEnabled:        std_logic;
 signal   pggR:             std_logic_vector( 7 downto 0 );
@@ -863,6 +884,20 @@ port map(
     pgVideoMode       => vmMode( 3 downto 2 )
         
 );   
+
+-- place vsync signal synchroniser
+
+pgVsyncInputSyncInst:inputSync
+generic map(
+    inputWidth  => 1
+)
+port map(
+    clock               => clkd2_80,
+    signalInput( 0 )    => pgVSync,
+    signalOutput( 0 )   => pgVSyncClkD2
+);
+
+
 
 -- place gfx pixel gen
 
@@ -1440,7 +1475,7 @@ port map(
     --gfx display mode interface ( ch0 )
     ch0DmaRequest           => pggDMARequest,
     ch0DmaPointerStart      => dmaDisplayPointerStart,
-    ch0DmaPointerReset      => pgVSync,
+    ch0DmaPointerReset      => pgVSyncClkD2,
    
     ch0BufClk               => not pgClock,
     ch0BufDout              => gfxBufRamDOut,
@@ -1633,10 +1668,10 @@ begin
          
       else
       
-         frameTimerPgPrvVSync <= pgVSync;
+         frameTimerPgPrvVSync <= pgVSyncClkD2;
          
          
-         if frameTimerPgPrvVSync = '0' and pgVSync = '1' then
+         if frameTimerPgPrvVSync = '0' and pgVSyncClkD2 = '1' then
       
             frameTimerValue <= frameTimerValue + '1';
             
