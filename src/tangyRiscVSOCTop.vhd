@@ -7,7 +7,7 @@ use IEEE.std_logic_unsigned.all;
 entity tangyRiscVSOCTop is
 
 generic(
-   useTangUART:                  boolean := true;
+   useTangUART:                  boolean := false;
    instBlitter3DAcceleration:    boolean := true;
    instFastFloatingMath:         boolean := false;
    instHidUSBHost:               boolean := true;

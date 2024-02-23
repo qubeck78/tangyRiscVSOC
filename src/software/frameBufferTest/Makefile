@@ -1,3 +1,12 @@
+#
+#to compile and send to board invoke 'make send'
+#adjust com port number in 'send' section if sending fails
+#
+#if compilation fails, update paths to used libs ( libgcc.a, libstdc++.a, etc )
+#
+#program send utility
+#https://github.com/qubeck78/srecsend
+#
 
 AS = riscv-none-embed-as -march=rv32im 
 CC = riscv-none-embed-gcc -march=rv32im -O2 -c 
