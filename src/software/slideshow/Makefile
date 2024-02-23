@@ -84,7 +84,7 @@ clean:
 	rm -f ../gfxLib/*.o
 
 send: $(TARGET).rec
-	srecsend $(TARGET).rec com3 230400
+	srecsend $(TARGET).rec com14 230400
 	riscv-none-embed-size $(TARGET).elf
 	
 	

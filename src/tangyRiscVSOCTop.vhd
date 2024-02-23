@@ -7,6 +7,7 @@ use IEEE.std_logic_unsigned.all;
 entity tangyRiscVSOCTop is
 
 generic(
+   useTangUART:                  boolean := true;
    instBlitter3DAcceleration:    boolean := true;
    instFastFloatingMath:         boolean := false;
    instHidUSBHost:               boolean := true;
@@ -1378,8 +1379,19 @@ end process;
 
 
 -- place uart
-extUartTx   <= uartTxd;
-uartRxd     <= extUartRx;
+
+useTangUARTGen: if ( useTangUART = true ) generate
+
+tangUartTx  <= uartTXD;
+uartRXD     <= tangUartRx;
+
+else generate
+
+extUartTx   <= uartTXD;
+uartRXD     <= extUartRx;
+
+end generate;
+
 
 UARTInst: UART
 port map(
@@ -1394,8 +1406,8 @@ port map(
   dataMask => cpuDataMask,
   ready    => uartReady,        
     
-  uartTXD  => uartTxd,
-  uartRXD  => uartRxd
+  uartTXD  => uartTXD,
+  uartRXD  => uartRXD
   
 );  
 
