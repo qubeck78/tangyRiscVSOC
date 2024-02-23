@@ -3,44 +3,20 @@
 	{
 		"selected_items":
 		[
-			[
-				"audioDa",
-				"auduioData"
-			],
-			[
-				"au",
-				"auduioData"
-			],
-			[
-				"M",
-				"OS_ALLOC_MEMF_CHIP"
-			],
-			[
-				"aud",
-				"audI"
-			]
 		]
 	},
 	"buffers":
 	[
 		{
-			"file": "Makefile",
+			"file": "main.cpp",
 			"settings":
 			{
-				"buffer_size": 3257,
+				"buffer_size": 3891,
 				"encoding": "UTF-8",
 				"line_ending": "Windows"
 			},
 			"undo_stack":
 			[
-				[
-					3,
-					1,
-					"paste",
-					null,
-					"AgAAAAAAAAAAAAAA/wAAAAAAAAAAAAAA/wAAAAAAAAD/AAAAAAAAACsAAAAjCiMgTWFrZWZpbGUgZm9yIFdoaXRlRHJhZ29uIHVzZXIgcHJvZ3JhbQoj",
-					"AQAAAAAAAAABAAAAKwAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/"
-				]
 			]
 		}
 	],
@@ -239,12 +215,9 @@
 	],
 	"file_history":
 	[
-		"/C/Users/qubec/Documents/Development/ProjektyVHDL/TangNano20K/tangyRiscVSOC/tangyRiscVSOC/src/software/audioSample/main.cpp",
-		"/C/Users/qubec/Documents/Development/ProjektyVHDL/TangNano20K/tangyRiscVSOC/tangyRiscVSOC/src/software/audioSample/Makefile",
-		"/C/Users/qubec/Documents/Development/ProjektyVHDL/TangNano20K/tangyRiscVSOC/tangyRiscVSOC/src/software/gfxLib/bsp.h",
-		"/C/Users/qubec/Documents/Development/ProjektyVHDL/TangNano20K/tangyRiscVSOC/tangyRiscVSOC/src/software/gfxLib/ff.cpp",
-		"/C/Users/qubec/Documents/Development/ProjektyVHDL/TangNano20K/tangyRiscVSOC/tangyRiscVSOC/src/software/audioTest/main.cpp",
-		"/C/Users/qubec/Documents/Development/ProjektyVHDL/TangNano20K/tangyRiscVSOC/tangyRiscVSOC/src/software/gfxLib/bsp.cpp",
+		"/F/msys64/home/qubec/ProjektyGccWindows/raytrace/Makefile",
+		"/F/msys64/home/qubec/ProjektyGccWindows/raytrace/main.cpp",
+		"/C/Users/qubec/Documents/Development/ProjektyVHDL/TangNano20K/tangyRiscVSOC/tangyRiscVSOC/src/software/raytrace/sine_table.h",
 		"/C/Users/qubec/Documents/Development/ProjektyVHDL/TangNano20K/tangyRiscVSOC/tangyRiscVSOC/src/software/slideshow/main.cpp",
 		"/C/Users/qubec/Documents/Development/ProjektyVHDL/TangNano20K/tangyRiscVSOC/tangyRiscVSOC/src/software/gfxLib/gfBitmap.cpp",
 		"/C/Users/qubec/Documents/Development/ProjektyVHDL/TangNano20K/tangyRiscVSOC/tangyRiscVSOC/src/software/gfxLib/gfTypes.h",
@@ -299,6 +272,7 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"g_time",
 			"usbhid",
 			"usbHIDHandleEvents",
 			"lfnBuf",
@@ -332,30 +306,30 @@
 			[
 				{
 					"buffer": 0,
-					"file": "Makefile",
+					"file": "main.cpp",
 					"selected": true,
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 3257,
+						"buffer_size": 3891,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								255,
-								255
+								1618,
+								1618
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/Makefile/Makefile.sublime-syntax",
+							"syntax": "Packages/C++/C++.sublime-syntax",
 							"tab_size": 3,
 							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 1539.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 0,
@@ -428,7 +402,7 @@
 		[
 			[
 				"",
-				"C:\\Users\\qubec\\Documents\\Development\\ProjektyVHDL\\TangNano20K\\tangyRiscVSOC\\tangyRiscVSOC\\src\\software\\audioModPlayerDMA\\audioModPlayerDMA.sublime-project"
+				"C:\\Users\\qubec\\Documents\\Development\\ProjektyVHDL\\TangNano20K\\tangyRiscVSOC\\tangyRiscVSOC\\src\\software\\slideshow\\slideshowProject.sublime-project"
 			]
 		],
 		"width": 380.0
