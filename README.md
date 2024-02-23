@@ -13,19 +13,48 @@ Contains:
 - USB HID host controller ( https://github.com/nand2mario/usb_hid_host ) 
 - GW2AR internal SDRAM controller with dma
 
-No external components needed, unless You want to connect an USB keyboard. Works on plain Tang Nano 20K board.
+No external components needed, unless You want to connect an USB keyboard or external uart ( faster ). Works on plain Tang Nano 20K board.
 
 Most examples require additional files placed on a SD card. Format SD card ( FAT32 ) and copy the 'SD' directory 
 of each example to the SD card root dir.
 
 
+Running software:
+
+When You start the core, bootloader takes control. It displays a welcome message and waits for code to be uploaded via UART.
+In order to do so, just execute 'make send' in software example directory.
+
+Note, that the makefile needs to be updated with a valid com port number.
+
+For uploading software, You can use Tang Nano 20K internal USB->UART converter embedded in programmer microcontroler, but I find it
+very slow. To speed up upload You will need to connect an external USB->UART converter to the following pins:
+
+FPGA pin 41 ( extUartTX ) to RXD pin of the converter
+
+FPGA pin 42 ( extUartRX ) to TXD pin of the converter
+
+Board GND to converter GND
+
+
+Please also check the generic definition at the top of "tangyRiscVSOCTop.vhd" file.
+
+useTangUART:  boolean := true;  - means that Tang Nano 20K internal uart will be used
+
+useTangUART:  boolean := false; - selects external uart for program upload ( needs converter )
+
+
 For USB HID host functionality:
 
 Connect:
+
 FPGA pin 27 to USB D+
+
 FPGA pin 28 to USB D-
+
 Board GND to USB GND
+
 Board 5V to USB 5V
+
 
 USB D+ and USB D- lines have to be pulled down to GND via 15K Resistors to ensure proper impedance matching.
 
