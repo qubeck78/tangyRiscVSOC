@@ -12,6 +12,8 @@ Contains:
 - SPI interface - SD card support 
 - USB HID host controller ( https://github.com/nand2mario/usb_hid_host ) 
 - GW2AR internal SDRAM controller with dma
+- Software examples located in src/software directory
+
 
 No external components needed, unless You want to connect an USB keyboard or external uart ( faster ). Works on plain Tang Nano 20K board.
 
@@ -41,6 +43,7 @@ Please also check the generic definition at the top of "tangyRiscVSOCTop.vhd" fi
 useTangUART:  boolean := true;  - means that Tang Nano 20K internal uart will be used
 
 useTangUART:  boolean := false; - selects external uart for program upload ( needs converter )
+
 
 
 For USB HID host functionality:
