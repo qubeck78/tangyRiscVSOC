@@ -36,6 +36,11 @@ ulong                    audioModDataLength;
 
 modcontext               modctx;
 
+short                   *audioData;
+ulong                    audioDataLength;
+short                   *audioDataL;
+short                   *audioDataH;
+
 
 
 
@@ -128,7 +133,18 @@ ulong init()
    //fifo read div to 3 ( 16kHz frequency )
    aud->fifoReadConfig = 0x2;
 
-   aud->audioDmaConfig  = 0x00;  //stop audio dma
+   //stop dma
+   aud->audioDmaConfig = 0x00;         
+
+   //alloc audio buffer
+
+   audioDataLength = 16384;   //8K samples
+
+   audioData = (short*)osAlloc( audioDataLength, OS_ALLOC_MEMF_CHIP ); 
+
+   audioDataL = &audioData[0];
+   audioDataH = &audioData[audioDataLength / 4];
+   
 
    //init hxcmod
    hxcmod_init( &modctx );
@@ -140,38 +156,6 @@ ulong init()
 }
 
 
-int audioTestMain()
-{
-   ushort sample;
-   ulong fifoData;
-   ulong i;
-
-   msample audioBuf[ 256 ];
-
-   do
-   {
-
-      //one sample is 2 bytes long
-      hxcmod_fillbuffer( &modctx, audioBuf, 256, NULL );
-
-      for( i = 0; i < 256; i++ )
-      {
-         sample = audioBuf[ i ];
-         fifoData =  (ushort)sample << 16;
-
-         //wait for free space in fifo
-         while( aud->audioFiFoStatus & 4 );
-         
-         aud->audioFiFoData = fifoData;
-
-
-      }
-
-
-   }while( 1 );
-
-   return 0;
-}
 
 
 int main()
@@ -183,6 +167,7 @@ int main()
    tosUIEvent     event; 
    tosFile        in;
    ulong          nbr;
+   ulong          audioDmaStatus;
 
    
    init();
@@ -193,9 +178,9 @@ int main()
 //   strcpy( modFileName, (char*) "0:/snd/dawn.mod" );
 //   strcpy( modFileName, (char*) "0:/snd/elysium.mod" );
 //   strcpy( modFileName, (char*) "0:/snd/spacedeb.mod" );
-   strcpy( modFileName, (char*) "0:/snd/pillusions.mod" );
+//   strcpy( modFileName, (char*) "0:/snd/pillusions.mod" );
 //   strcpy( modFileName, (char*) "0:/snd/pillusions2.mod" );
-//   strcpy( modFileName, (char*) "0:/snd/odyssey.mod" );
+   strcpy( modFileName, (char*) "0:/snd/odyssey.mod" );
 //   strcpy( modFileName, (char*) "0:/snd/somewhere.mod" );
 //   strcpy( modFileName, (char*) "0:/snd/sundown.mod" );
 //   strcpy( modFileName, (char*) "0:/snd/nemesis.mod" );
@@ -236,16 +221,41 @@ int main()
    
    con.textAttributes = 0x8f;
 
-   toPrintF( &con, (char*)"Playing %s ( %d )\n", modFileName, audioModDataLength );
+   toPrintF( &con, (char*)"Playing %s ( %d ) via audio DMA\n", modFileName, audioModDataLength );
 
-   audioTestMain();
 
-   /*do
+   //pre-fill lower part of the buffer
+   //length in samples ( 16-bit) -> half of the buffer
+   hxcmod_fillbuffer( &modctx, audioDataL, audioDataLength / 4, NULL );
+
+   //play audio buffer :)
+
+   aud->audioDmaPointer = ( (ulong)audioData - _SYSTEM_MEMORY_BASE ) / 4;
+   aud->audioDmaLength  = ( audioDataLength / 4 ) - 1;      //32 bit tranfer, 2 samples per count
+   aud->audioDmaConfig  = 0x01;                             //start dma transfer, mode: mono
+
+
+   do
    {
 
-      audioTestMain();
+      do
+      {
+         audioDmaStatus = aud->audioDmaStatus;
+      }while( audioDmaStatus & 2 );
+
+      //lower part of buffer is played, fill upper
+      hxcmod_fillbuffer( &modctx, audioDataH, audioDataLength / 4, NULL );
+
+      do
+      {
+         audioDmaStatus = aud->audioDmaStatus;
+      }while( ( ! (audioDmaStatus & 2 ) ) );
+
+      //upper part of buffer is played, fill lower
+      hxcmod_fillbuffer( &modctx, audioDataL, audioDataLength / 4, NULL );
+
    
-      if( !osGetUIEvent( &event ) )
+      while( !osGetUIEvent( &event ) )
       { 
          if( event.type == OS_EVENT_TYPE_KEYBOARD_KEYPRESS )
          {
@@ -253,13 +263,14 @@ int main()
             {
                case _KEYCODE_PAUSE:
 
+                  aud->audioDmaConfig  = 0x00;  //stop audio dma
                   reboot();
                   break;  
             }
          }
       }
-   
+ 
+
    }while( 1 );
-   */
 
 } 

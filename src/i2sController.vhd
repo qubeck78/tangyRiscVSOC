@@ -3,9 +3,6 @@ use ieee.std_logic_1164.all;
 use IEEE.std_logic_arith.all;
 use IEEE.std_logic_unsigned.all;
 
-library altera_mf;
-use altera_mf.altera_mf_components.all;
-
 
 --https://en.wikipedia.org/wiki/I%C2%B2S
 

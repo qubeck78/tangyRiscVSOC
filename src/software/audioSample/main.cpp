@@ -117,6 +117,8 @@ ulong init()
 	//fifo read div to 2 ( 24kHz frequency )
 	aud->fifoReadConfig = 0x1;
 
+   aud->audioDmaConfig  = 0x00;  //stop audio dma
+
 	return rv;
 }
 
