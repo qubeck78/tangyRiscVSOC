@@ -9,8 +9,8 @@ entity tangyRiscVSOCTop is
 generic(
    instBlitter3DAcceleration:    boolean := true;
    instFastFloatingMath:         boolean := false;
-   instHidUSBHost:               boolean := true
-
+   instHidUSBHost:               boolean := true;
+   instI2SAudio:                 boolean := true
 );
 
 port(
@@ -18,66 +18,70 @@ port(
 	--onboard peripherals
 	
 	--Ext pll clock 25MHz
-	extPllClock25:      in std_logic;   -- pin 10, aux pll output 0
+	extPllClock25:      in      std_logic;   -- pin 10, aux pll output 0
 	
     --exp pll clock 12MHz
-    extPllClock12:      in std_logic;   -- pin 11, aux pll output 1
+    extPllClock12:      in      std_logic;   -- pin 11, aux pll output 1
 
     --onboard osc 27
-    oscClock27:         in std_logic;   -- pin 4
+    oscClock27:         in      std_logic;   -- pin 4
 
 	--reset
-    buttonReset:        in std_logic;   -- high active
+    buttonReset:        in      std_logic;   -- high active
 
     --buttonUser
-    buttonUser:         in std_logic;   -- high active
+    buttonUser:         in      std_logic;   -- high active
 	
     --leds
-    leds:               out std_logic_vector( 5 downto 0 );
+    leds:               out     std_logic_vector( 5 downto 0 );
    
     --rgb led
-    rgbLedDout:         out std_logic;
+    rgbLedDout:         out     std_logic;
 
     --hdmi
-    O_tmds_clk_p:       out std_logic;
-    O_tmds_clk_n:       out std_logic;
-    O_tmds_data_p:      out std_logic_vector( 2 downto 0 );
-    O_tmds_data_n:      out std_logic_vector( 2 downto 0 );
+    O_tmds_clk_p:       out     std_logic;
+    O_tmds_clk_n:       out     std_logic;
+    O_tmds_data_p:      out     std_logic_vector( 2 downto 0 );
+    O_tmds_data_n:      out     std_logic_vector( 2 downto 0 );
 
-    dviCEC:             inout std_logic;
-    dviEdidClk:         inout std_logic;
-    dviEdidDat:         inout std_logic;
+    dviCEC:             inout   std_logic;
+    dviEdidClk:         inout   std_logic;
+    dviEdidDat:         inout   std_logic;
 	
     --i2s
-    i2sSDMode:          out std_logic;
-    i2sBClk:            out std_logic;
-    i2sLRCk:            out std_logic;
-    i2sDOut:            out std_logic;
+    i2sSDMode:          out     std_logic;
+    i2sBClk:            out     std_logic;
+    i2sLRCk:            out     std_logic;
+    i2sDOut:            out     std_logic;
        
 	--ext uart
-	extUartTx:	        out std_logic;
-	extUartRx:	        in std_logic;
+	extUartTx:	        out     std_logic;
+	extUartRx:	        in      std_logic;
+
+    --tang uart
+    tangUartTx:         out     std_logic;
+    tangUartRx:         in      std_logic;
 
     --sd card 
-	sdMciDat:	inout	std_logic_vector( 3 downto 0 );	
-	sdMciCmd:	out 	std_logic;	
-	sdMciClk:	out 	std_logic;	
+	sdMciDat:	        inout   std_logic_vector( 3 downto 0 );	
+	sdMciCmd:	        out     std_logic;	
+	sdMciClk:	        out 	std_logic;	
 
     --usb host
-    usbhDP:     inout   std_logic;  -- D+ pin 27
-    usbhDM:     inout   std_logic;  -- D- pin 28
+    usbhDP:             inout   std_logic;  -- D+ pin 27
+    usbhDM:             inout   std_logic;  -- D- pin 28
 
     --internal sdram
-    O_sdram_clk:        out std_logic;
-	O_sdram_cke:        out std_logic;
-	O_sdram_cs_n:       out std_logic;
-	O_sdram_cas_n:      out std_logic;
-	O_sdram_ras_n:      out std_logic;
-	O_sdram_wen_n:      out std_logic;
-	O_sdram_dqm:        out std_logic_vector(3 downto 0);
-	O_sdram_addr:       out std_logic_vector(10 downto 0);
-	O_sdram_ba:         out std_logic_vector(1 downto 0);
-	IO_sdram_dq:        inout std_logic_vector(31 downto 0)
+    O_sdram_clk:        out     std_logic;
+	O_sdram_cke:        out     std_logic;
+	O_sdram_cs_n:       out     std_logic;
+	O_sdram_cas_n:      out     std_logic;
+	O_sdram_ras_n:      out     std_logic;
+	O_sdram_wen_n:      out     std_logic;
+	O_sdram_dqm:        out     std_logic_vector(3 downto 0);
+	O_sdram_addr:       out     std_logic_vector(10 downto 0);
+	O_sdram_ba:         out     std_logic_vector(1 downto 0);
+	IO_sdram_dq:        inout   std_logic_vector(31 downto 0)
 	
 );
 end tangyRiscVSOCTop;
@@ -1126,11 +1130,8 @@ end process;
 
 
 -- chip selects
-    systemRAMCE       <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"000" else
-                        '0';
+    systemRAMCE       <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"000" else '0';
 
---   fastRAMCE         <= '1' when ( cpuMemValid = '1'  ) and cpuAOutFull( 31 downto 24 ) = x"30" else '0';
---         
     dmaMemoryCE       <= '1' when ( cpuMemValid = '1'  ) and cpuAOutFull( 31 downto 24 ) = x"20" else '0';
          
     registersCE       <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"f00" else '0';
@@ -1147,9 +1148,6 @@ end process;
 
     i2sCE             <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"f06" else '0';
 
---   
---   sdramCtrlCE       <= '1' when ( cpuMemValid = '1'  ) and cpuAOutFull( 31 downto 28 ) = x"4" else '0';
---   
 
 -- bus slaves ready signals mux
    cpuMemReady       <= systemRamReady when systemRAMCE = '1'
@@ -1164,7 +1162,6 @@ end process;
                         else '1';
 
 
---                        else sdramCtrlSdramReady when sdramCtrlCE = '1' 
 
 
 
@@ -1178,9 +1175,7 @@ end process;
                         blitterDoutForCPU                         when cpuAOutFull( 31 downto 20 ) = x"f02" else
                         fpAluDoutForCPU                           when cpuAOutFull( 31 downto 20 ) = x"f01" else
                         i2sDoutForCPU                             when cpuAOutFull( 31 downto 20 ) = x"f06" else 
---                        sdramCtrlDataOutForCPU                    when cpuAOutFull( 31 downto 28 ) = x"4"   else
-
-                          x"00000000";
+                        x"00000000";
 
                      
 -- the cpu
@@ -1383,36 +1378,36 @@ end process;
 
 
 -- place uart
-   extUartTx   <= uartTxd;
-   uartRxd     <= extUartRx;
+extUartTx   <= uartTxd;
+uartRxd     <= extUartRx;
 
-   UARTInst: UART
-    port map(
-      reset    => reset,
-      clock    => uartClock,     
-      
-      a        => cpuAOut( 15 downto 0 ),
-      din      => cpuDOut,
-      dout     => uartDoutForCPU,
-      ce       => uartCE,
-      wr       => cpuWr,
-      dataMask => cpuDataMask,
-      ready    => uartReady,        
-        
-      uartTXD  => uartTxd,
-      uartRXD  => uartRxd
-      
-    );  
+UARTInst: UART
+port map(
+  reset    => reset,
+  clock    => uartClock,     
+  
+  a        => cpuAOut( 15 downto 0 ),
+  din      => cpuDOut,
+  dout     => uartDoutForCPU,
+  ce       => uartCE,
+  wr       => cpuWr,
+  dataMask => cpuDataMask,
+  ready    => uartReady,        
+    
+  uartTXD  => uartTxd,
+  uartRXD  => uartRxd
+  
+);  
 
 -- place SPI   
-   
-   sdMciClk    <= spiSClk;
-   sdMciDat(3) <= gpoRegister( 0 ); --cs
-   sdMciCmd    <= spiMOSI;
-   spiMISO     <= sdMciDat( 0 );
+
+sdMciClk    <= spiSClk;
+sdMciDat(3) <= gpoRegister( 0 ); --cs
+sdMciCmd    <= spiMOSI;
+spiMISO     <= sdMciDat( 0 );
 
 
-   sdMciDat(2 downto 0 )   <= "ZZZ";
+sdMciDat(2 downto 0 )   <= "ZZZ";
 
    
 SPIInst:SPI
@@ -1591,6 +1586,12 @@ else generate
 
 end generate;
 
+
+--instI2SAudio
+
+instI2SAudioGen: if( instI2SAudio = true ) generate
+
+
 -- place i2s controller ( audio )
 
 -- i2s dac enabled 
@@ -1622,6 +1623,28 @@ port map(
     i2sLRCk     => i2sLRCk,
     i2sDOut     => i2sDOut
 );
+
+
+else generate
+
+--i2s dac disabled 
+i2sSDMode       <= '0';
+
+--cpu interface
+i2sDoutForCPU   <= ( others => '0' );
+i2sReady        <= '1';
+
+--disable audio dma request
+dmaCh1Request   <= '0';
+dmaCh1A         <= ( others => '0' );
+
+--i2s interface
+i2sBClk         <= '0';
+i2sLRCk         <= '0';
+i2sDOut         <= '0';
+
+end generate;
+
 
 --tick timer process
 tickTimer: process( all )

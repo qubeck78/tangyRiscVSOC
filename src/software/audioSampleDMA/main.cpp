@@ -165,8 +165,8 @@ int main()
 
 	//play sample :)
 	aud->audioDmaPointer = ( (ulong)audioData - _SYSTEM_MEMORY_BASE ) / 4;
-	aud->audioDmaLength = audioDataLength / 4;	//32 bit tranfer, 2 samples per count
-	aud->audioDmaConfig = 0x01;						//start dma transfer, mode: mono
+	aud->audioDmaLength = ( audioDataLength / 4 ) - 1;	//32 bit tranfer, 2 samples per count
+	aud->audioDmaConfig = 0x01;								//start dma transfer, mode: mono
 
 
 	bufStatus = 2; //refresh buf status
