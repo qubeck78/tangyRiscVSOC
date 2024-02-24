@@ -20,6 +20,18 @@ No external components needed, unless You want to connect an USB keyboard or ext
 Most examples require additional files placed on a SD card. Format SD card ( FAT32 ) and copy the 'SD' directory 
 of each example to the SD card root dir.
 
+Core relies on Tang Nano external PLL to generate two necesary clocks:
+
+--Ext pll clock 25MHz
+extPllClock25:      in      std_logic;   -- pin 10, aux pll output 0
+	
+--Ext pll clock 12MHz
+extPllClock12:      in      std_logic;   -- pin 11, aux pll output 1
+
+Please read Tang Nano 20K wiki article describing how to configure external PLL.
+
+https://wiki.sipeed.com/hardware/en/tang/tang-nano-20k/example/unbox.html#pll_clk
+
 
 Running software:
 
