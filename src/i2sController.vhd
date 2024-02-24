@@ -99,7 +99,7 @@ signal fifoDinDma:              std_logic_vector( 31 downto 0 );
 
 -- i2s dma control signals
 
-type   dmaState_T is    ( dmaDisabled, dmaMode01s0, dmaMode01s1, dmaMode01s2, dmaMode01s3, dmaMode01s4 );
+type   dmaState_T is    ( dmaDisabled, dmaMode01s0, dmaMode01s1, dmaMode01s2, dmaMode01s3, dmaMode01s4, dmaMode01s5 );
 signal dmaState:                dmaState_T;
 
 
@@ -107,6 +107,8 @@ signal dmaState:                dmaState_T;
 -- 01 - mono (left channel only )
 -- 10 - stereo
 signal dmaMode:                 std_logic_vector( 1 downto 0 );
+signal dmaLoop:                 std_logic;
+
 signal dmaDataPointerReg:       std_logic_vector( 20 downto 0 );
 signal dmaDataLengthReg:        std_logic_vector( 20 downto 0 );
 
@@ -162,6 +164,8 @@ begin
         fifoReadDiv         <= x"00";       
 
         dmaMode             <= "00";        -- dma disabled by default
+        dmaLoop             <= '0';         -- dma buffer looping disabled by default
+
         dmaFinishedClear    <= '0';
      else
      
@@ -227,10 +231,11 @@ begin
                     --0x10 rw audioDmaConfig
                     when x"04" =>
 
-                        dout    <= x"0000000" & "00" & dmaMode;
+                        dout    <= x"0000000" & '0' & dmaLoop & dmaMode;
 
                         if wr = '1' then
 
+                            dmaLoop <= din( 2 );
                             dmaMode <= din( 1 downto 0 );
 
                         end if;
@@ -441,20 +446,42 @@ begin
                         dmaDataCounter  <= dmaDataCounter + 1;
                         dmaDataPointer  <= dmaDataPointer + 1;
 
+                        dmaState <= dmaMode01s0;
+
                     else
 
-                        --loop
-
+                        --restart pointer / counter
                         dmaDataCounter  <= ( others => '0' );
                         dmaDataPointer  <= dmaDataPointerReg;
 
                         --set dmaFinished flag
                         dmaFinished     <= '1';
 
+                        if dmaLoop = '1' then
+
+                            --looping enabled
+
+                            dmaState <= dmaMode01s0;
+
+                        else
+
+                            --looping disabled
+
+                            dmaState <= dmaMode01s5;
+
+                        end if; --dmaLoop = '1' or '0'
+
                     end if;
 
-                    dmaState <= dmaMode01s0;
+                when dmaMode01s5 =>
 
+                    -- wait for dma mode change
+
+                    if dmaMode /= "01" then
+
+                        dmaState    <= dmaDisabled;
+
+                    end if;
 
                 when others =>
 
