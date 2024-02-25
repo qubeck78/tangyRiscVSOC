@@ -220,6 +220,7 @@ typedef struct __SPI_REGISTERS_T
 }_SPI_REGISTERS_T;
 
 extern _SPI_REGISTERS_T *spi0;
+extern _SPI_REGISTERS_T *spi1;
 
 typedef struct __AUDIO_REGISTERS_T
 {

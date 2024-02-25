@@ -13,6 +13,7 @@ _USBHOST_REGISTERS_T *usbhost   = ( _USBHOST_REGISTERS_T *) 0xf0300000; //hid us
 _UART_REGISTERS_T *uart0        = ( _UART_REGISTERS_T *)    0xf0400000; //uart 0 base address
 _SPI_REGISTERS_T *spi0          = ( _SPI_REGISTERS_T *)     0xf0500000; //spi 0 base address
 _AUDIO_REGISTERS_T *aud         = ( _AUDIO_REGISTERS_T*)    0xf0600000; //i2s audio base address
+_SPI_REGISTERS_T *spi1          = ( _SPI_REGISTERS_T *)     0xf0700000; //spi 1 base address
 
 
 void (*bootLoaderEntry)(void) = (void(*)())0x0; 
