@@ -1432,7 +1432,7 @@ port map(
   
 );  
 
--- place SPI   
+--place SD card SPI   
 
 sdMciClk    <= spiSClk;
 sdMciDat(3) <= gpoRegister( 0 ); --cs
@@ -1468,7 +1468,7 @@ port map(
 );
 
 
---place tang flash spi
+--place tang flash SPI
 tangFlashCSn    <= gpoRegister( 8 );
 tangFlashClk    <= flashSpiSClk;
 tangFlashMOSI   <= flashSpiMOSI;

@@ -17,7 +17,7 @@
 
 extern tgfTextOverlay    con;
 
-uchar flashDataBuffer[1024];
+uchar flashDataBuffer[256 + 1];
 
 
 int animLeds( int j )
