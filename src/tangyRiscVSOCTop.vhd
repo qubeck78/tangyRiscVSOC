@@ -597,11 +597,12 @@ signal   videoRamBA:       std_logic_vector( 13 downto 0 );
 signal   pgVSyncClkD2:     std_logic;
 
 -- gfx pixel gen signals
-signal   pgEnabled:        std_logic;
-signal   pggR:             std_logic_vector( 7 downto 0 );
-signal   pggG:             std_logic_vector( 7 downto 0 );
-signal   pggB:             std_logic_vector( 7 downto 0 ); 
-signal   pggDMARequest:    std_logic_vector( 1 downto 0 );
+signal   pgEnabled:             std_logic;
+signal   pggR:                  std_logic_vector( 7 downto 0 );
+signal   pggG:                  std_logic_vector( 7 downto 0 );
+signal   pggB:                  std_logic_vector( 7 downto 0 ); 
+signal   pggDMARequest:         std_logic_vector( 1 downto 0 );
+signal   pggDMARequestClkD2:    std_logic_vector( 1 downto 0 );
 
 -- system ram signals
 signal  fpgaCpuMemoryClock:         std_logic;
@@ -963,6 +964,20 @@ port map(
     pgVideoMode       => vmMode( 5 downto 4 ),
     pgEnabled         => pgEnabled
 );
+
+--place dma request synchroniser
+
+pggDmaRequestInputSyncInst:inputSync
+generic map(
+    inputWidth  => 2
+)
+port map(
+    clock           => clkd2_80,
+    signalInput     => pggDMARequest,
+    signalOutput    => pggDMARequestClkD2
+);
+
+
 
 --place system ram
 
@@ -1539,7 +1554,7 @@ port map(
     clockSdram              => sdramClock,
 
     --gfx display mode interface ( ch0 )
-    ch0DmaRequest           => pggDMARequest,
+    ch0DmaRequest           => pggDMARequestClkD2,
     ch0DmaPointerStart      => dmaDisplayPointerStart,
     ch0DmaPointerReset      => pgVSyncClkD2,
    
