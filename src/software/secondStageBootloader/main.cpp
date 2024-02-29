@@ -1,8 +1,3 @@
-#include "main.h"
-#include <cstring>
-#include <climits>
-#include <math.h> 
-
 #include "../gfxLib/bsp.h"
 #include "../gfxLib/osAlloc.h"
 #include "../gfxLib/osFile.h"
@@ -11,16 +6,20 @@
 #include "../gfxLib/gfFont.h"
 #include "../gfxLib/gfGouraud.h"
 #include "../gfxLib/osUIEvents.h"
-#include "../gfxLib/usbHID.h"  
 
-#include "../gfxLib/ff.h" 
 
+#include "main.h"
+#include "ui.h"
 
 extern tgfTextOverlay    con;
 
-tgfBitmap             screen;
-tgfBitmap             background;
+tgfBitmap               screen;
+tgfBitmap               background;
 
+long              selectorWindowIdx;
+long              selectorCursorPos;
+long              selectorWindowHeight;
+char              selectorFileNames[26][_MAXFILENAMELENGTH + 1];
 
 int animLeds( int j )
 {  
@@ -54,6 +53,9 @@ ulong init()
    bspInit();
          
    setVideoMode( _VIDEOMODE_320_TEXT80_OVER_GFX );
+
+   toPrint( &con, ( char* )"Bootloader...\n" );
+
    
    //alloc screen buffers
    screen.width            = 320;
@@ -110,28 +112,19 @@ int main()
    rv = gfLoadBitmapFS( &background, (char*) "0:/sys/bootbg.gbm" );
    gfBlitBitmap( &screen, &background, 0, 0 );
 
-   con.textAttributes = 0x08;
+   uiInit();
 
+   uiRedrawConsole();
 
-   toSetCursorPos( &con, 80 - 19, 26 ); toPrint( &con, (char*) "   |.\\__/.|    (~\\" );
-   toSetCursorPos( &con, 80 - 19, 27 ); toPrint( &con, (char*) "   | O O  |     ) )" );
-   toSetCursorPos( &con, 80 - 19, 28 ); toPrint( &con, (char*) " _.|  T   |_   ( (" );   
-   toSetCursorPos( &con, 80 - 19, 29 ); toPrint( &con, (char*) "- ((---- ((-------" );
-
-   toSetCursorPos( &con, 0, 27 );
-   toPrint( &con, (char*) "tangyRiscVSOC" );
-
-   toSetCursorPos( &con, 0, 28 );
-   toPrint( &con, (char*) "bootloader" );
-
-   toSetCursorPos( &con, 0, 29 );
-   toPrint( &con, (char*) "B20240225" )
-;
-   con.textAttributes = 0x8f;
-
-   toSetCursorPos( &con, 29, 2 );
-   toPrint( &con, (char*) "Select program to load" );
+   //reset dir cursors
+   selectorWindowIdx       = 0;
+   selectorCursorPos       = 0;
    
+   //default selector window height
+   selectorWindowHeight = 22;
+
+   uiReadDirAndFillSelectorWindowContents();
+   uiDrawSelectorWindowContents();
 
    do
    {
@@ -147,6 +140,49 @@ int main()
 
                   reboot();
                   break;  
+
+               case _KEYCODE_UP:
+               
+                  if( selectorCursorPos > 0 )
+                  {
+                     selectorCursorPos--;
+                  }
+                  else
+                  {
+                     selectorCursorPos = selectorWindowHeight - 1;
+                     selectorWindowIdx -= selectorWindowHeight;
+                     
+                     if( selectorWindowIdx < 0 )
+                     {
+                        selectorWindowIdx = 0;
+                        selectorCursorPos = 0;
+                     }
+
+                     uiReadDirAndFillSelectorWindowContents();
+
+                  }
+
+                  uiDrawSelectorWindowContents();
+                  break;
+
+               case _KEYCODE_DOWN:
+
+                  if( selectorCursorPos < ( selectorWindowHeight - 1 ) )
+                  {
+                     if(  selectorFileNames[selectorCursorPos + 1 ][0] != 0x00 )
+                     {
+                        selectorCursorPos++;
+                     }
+                     
+                  }else
+                  {
+                     selectorCursorPos    = 0;
+                     selectorWindowIdx    += selectorWindowHeight;
+                     
+                     uiReadDirAndFillSelectorWindowContents();
+                  }
+                  uiDrawSelectorWindowContents();
+                  break;
             }
          }
       }
