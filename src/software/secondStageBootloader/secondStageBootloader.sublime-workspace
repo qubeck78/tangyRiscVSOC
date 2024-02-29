@@ -202,7 +202,10 @@
 				"buffer_size": 3054,
 				"encoding": "UTF-8",
 				"line_ending": "Windows"
-			}
+			},
+			"undo_stack":
+			[
+			]
 		}
 	],
 	"build_system": "Packages/User/make send.sublime-build",
@@ -553,8 +556,8 @@
 						"selection":
 						[
 							[
-								0,
-								0
+								478,
+								478
 							]
 						],
 						"settings":
