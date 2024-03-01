@@ -11,15 +11,20 @@
 #include "main.h"
 #include "ui.h"
 
+extern BSP_T            *bsp;
+extern ulong             random_state;
 extern tgfTextOverlay    con;
 
-tgfBitmap               screen;
-tgfBitmap               background;
 
-long              selectorWindowIdx;
-long              selectorCursorPos;
-long              selectorWindowHeight;
-char              selectorFileNames[26][_MAXFILENAMELENGTH + 1];
+extern void(*bootLoaderEntry)(void);
+
+tgfBitmap                screen;
+tgfBitmap                background;
+
+long                     selectorWindowIdx;
+long                     selectorCursorPos;
+long                     selectorWindowHeight;
+char                     selectorFileNames[26][_MAXFILENAMELENGTH + 1];
 
 int animLeds( int j )
 {  
@@ -43,6 +48,40 @@ int animLeds( int j )
    return 0;
 } 
 
+//custom BSP init, since we are using first 0.5MB of SDRAM for code
+int bootloaderBspInit()
+{
+    random_state            = ( bsp->tickTimerValue << 16 ) | ( bsp->tickTimerValue ^ 0xf123 );
+
+    osAllocInit();
+    osAllocAddNode( 0, ( void* )( _SYSTEM_MEMORY_BASE + 0x80000 ), _SYSTEM_MEMORY_SIZE - 0x80000, OS_ALLOC_MEMF_CHIP );
+
+    bsp->videoMuxMode       = 0x02; //text over gfx, 320x240
+    
+    //connect gfxlib con to hardware text overlay   
+    con.type                = GF_TEXT_OVERLAY_TYPE_HARDWARE;
+    con.flags               = 0;
+    con.width               = 80;               //clear whole buffer
+    con.height              = 30;
+    con.cursX               = 0;
+    con.cursY               = 0;
+    con.textAttributes      = 0x0f;
+    con.font                = NULL;
+    con.textBuffer          = (uchar*) 0x6d40; //hw text mode buffer address
+
+    toCls( &con );
+
+    con.width               = 40;               //default 40x30 console
+
+    con.textAttributes      = 0x8f; 
+
+    bootLoaderEntry = (void(*)())0x0; 
+
+    return 0;
+} 
+
+
+
 ulong init()
 {
    ulong rv;
@@ -50,7 +89,7 @@ ulong init()
 
    rv = 0;
 
-   bspInit();
+   bootloaderBspInit();
          
    setVideoMode( _VIDEOMODE_320_TEXT80_OVER_GFX );
 
@@ -101,10 +140,7 @@ ulong init()
 
 int main()
 {
-   int         i;
-   int         rv;
-   
-   volatile int   j;
+   int            rv;
    tosUIEvent     event; 
 
    init();
@@ -121,7 +157,7 @@ int main()
    selectorCursorPos       = 0;
    
    //default selector window height
-   selectorWindowHeight = 22;
+   selectorWindowHeight    = 22;
 
    uiReadDirAndFillSelectorWindowContents();
    uiDrawSelectorWindowContents();
@@ -169,7 +205,7 @@ int main()
 
                   if( selectorCursorPos < ( selectorWindowHeight - 1 ) )
                   {
-                     if(  selectorFileNames[selectorCursorPos + 1 ][0] != 0x00 )
+                     if( selectorFileNames[selectorCursorPos + 1 ][0] != 0x00 )
                      {
                         selectorCursorPos++;
                      }

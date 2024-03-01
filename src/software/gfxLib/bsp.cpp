@@ -18,10 +18,10 @@ _SPI_REGISTERS_T *spi1          = ( _SPI_REGISTERS_T *)     0xf0700000; //spi 1 
 
 void (*bootLoaderEntry)(void) = (void(*)())0x0; 
 
-tgfTextOverlay       con;
+tgfTextOverlay  con;
 
 
-unsigned int random_state = 3242323459;
+ulong           random_state = 3242323459;
 
 int bspInit()
 {

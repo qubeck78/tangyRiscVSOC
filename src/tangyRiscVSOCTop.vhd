@@ -8,7 +8,7 @@ entity tangyRiscVSOCTop is
 
 generic(
    useTangUART:                  boolean := false;
-   instBlitter3DAcceleration:    boolean := true;
+   instBlitter3DAcceleration:    boolean := false;
    instFastFloatingMath:         boolean := false;
    instHidUSBHost:               boolean := true;
    instI2SAudio:                 boolean := true

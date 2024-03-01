@@ -92,7 +92,7 @@ clean:
 	rm -f *.o *.rec *.disasm *.elf *.mif *.mi *.bin *.map
 	rm -f ../gfxLib/*.o
 
-send: $(TARGET).rec
+send: $(TARGET).rec $(TARGET).bin $(TARGET).disasm
 	srecsend $(TARGET).rec com3 230400
 
 	
