@@ -7,7 +7,6 @@
 #include "../gfxLib/gfBitmap.h"
 #include "../gfxLib/gfDrawing.h"
 #include "../gfxLib/gfFont.h"
-#include "../gfxLib/gfGouraud.h"
 #include "../gfxLib/osUIEvents.h"
 
 
@@ -50,8 +49,6 @@ ulong uiRedrawConsole()
    toPrint( &con, (char*) _BUILD_DATE );
    con.textAttributes = 0x8f;
 
-   toSetCursorPos( &con, 29, 2 );
-   toPrint( &con, (char*) "Select program to load" );
 
 
    return 0;   
@@ -118,6 +115,11 @@ ulong uiDrawSelectorWindowContents()
 
    rv = 0;
 
+   con.textAttributes = 0x8f;
+
+   toSetCursorPos( &con, 29, 2 );
+   toPrint( &con, (char*) "Select program to load" );
+
    con.textAttributes   = 0x0f;
    for( i = 0; i < selectorWindowHeight; i++ )
    {
@@ -167,4 +169,19 @@ ulong uiDrawSelectorWindowContents()
    }
 
    return rv;
+}
+
+ulong uiDrawLoadingScreen( char *path )
+{
+   con.textAttributes = 0x8f;
+
+   toSetCursorPos( &con, 36, 11 );
+   toPrint( &con, (char*) "Loading:" );
+
+   con.textAttributes = 0x8e;
+   toSetCursorPos( &con, 40 - ( strlen( path ) / 2 ), 12 );
+
+   toPrint( &con, path );
+
+   return 0;
 }

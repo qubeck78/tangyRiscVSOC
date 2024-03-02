@@ -10,6 +10,7 @@
 
 #include "main.h"
 #include "ui.h"
+#include "srec.h"
 
 extern BSP_T            *bsp;
 extern ulong             random_state;
@@ -25,6 +26,8 @@ long                     selectorWindowIdx;
 long                     selectorCursorPos;
 long                     selectorWindowHeight;
 char                     selectorFileNames[26][_MAXFILENAMELENGTH + 1];
+char                     buf[512];
+char                     path[512];
 
 int animLeds( int j )
 {  
@@ -56,7 +59,7 @@ int bootloaderBspInit()
     osAllocInit();
     osAllocAddNode( 0, ( void* )( _SYSTEM_MEMORY_BASE + 0x80000 ), _SYSTEM_MEMORY_SIZE - 0x80000, OS_ALLOC_MEMF_CHIP );
 
-    bsp->videoMuxMode       = 0x02; //text over gfx, 320x240
+    bsp->videoMuxMode       = _VIDEOMODE_320_TEXT80_OVER_GFX; 
     
     //connect gfxlib con to hardware text overlay   
     con.type                = GF_TEXT_OVERLAY_TYPE_HARDWARE;
@@ -70,8 +73,6 @@ int bootloaderBspInit()
     con.textBuffer          = (uchar*) 0x6d40; //hw text mode buffer address
 
     toCls( &con );
-
-    con.width               = 40;               //default 40x30 console
 
     con.textAttributes      = 0x8f; 
 
@@ -91,8 +92,6 @@ ulong init()
 
    bootloaderBspInit();
          
-   setVideoMode( _VIDEOMODE_320_TEXT80_OVER_GFX );
-
    toPrint( &con, ( char* )"Bootloader...\n" );
 
    
@@ -108,7 +107,7 @@ ulong init()
    
    if( screen.buffer == NULL )
    {
-      toPrint( &con, (char*)"\nCan't alloc screen1\n" );
+      toPrint( &con, (char*)"\nCan't alloc screen\n" );
       do{}while( 1 );
    } 
    
@@ -137,6 +136,90 @@ ulong init()
    return rv;
 }
 
+ulong loadSrecFile( char *path )
+{
+   tosFile  in;
+   ulong    rv;
+   ulong    i;
+
+   uiRedrawConsole();
+
+
+   if( osFOpen( &in, path, OS_FILE_READ ) )
+   {
+      return 1;
+   }
+
+
+   uiDrawLoadingScreen( path );
+
+   i = 0;
+
+   while( !osFGetS( &in, (uchar*)buf, sizeof( buf) - 1 ) )
+   {
+
+      con.textAttributes = 0x8f;
+      toSetCursorPos( &con, 40 - 2, 14 );
+      toPrintF( &con, "%04X", i++ );
+
+      rv = 0;
+
+      if( buf[0] == 'S' )
+      {
+               
+         switch( buf[1] )
+         {
+            case '1':
+               rv = decodeAndSaveS1_2_3Record( buf, 1 );
+               break;
+               
+            case '2':
+               rv = decodeAndSaveS1_2_3Record( buf, 2 );
+               break;
+
+            case '3':
+               rv = decodeAndSaveS1_2_3Record( buf, 3 );
+               break;
+               
+            case '0':
+            case '4':
+            case '5':
+            case '6':
+               rv = 0;
+               break;
+               
+            case '7':
+               rv = decodeAndExecuteS7_8_9Record( buf, 7 );
+               break;
+               
+            case '8':
+            
+               rv = decodeAndExecuteS7_8_9Record( buf, 8 );
+               break;
+
+            case '9':
+            
+               rv = decodeAndExecuteS7_8_9Record( buf, 9 );
+               break;
+               
+            default:
+               
+               rv = 2;               
+         }
+      
+      } 
+
+      if( rv )
+      {
+         break;
+      }
+   }
+
+   osFClose( &in );
+
+   //shouldn't return
+   return 1;
+}
 
 int main()
 {
@@ -218,6 +301,18 @@ int main()
                      uiReadDirAndFillSelectorWindowContents();
                   }
                   uiDrawSelectorWindowContents();
+                  break;
+
+               case _KEYCODE_ENTER:
+
+                  strcpy( path, "0:apps/" );
+                  strcat( path, selectorFileNames[ selectorCursorPos ] );
+
+                  loadSrecFile( path );
+
+                  uiRedrawConsole();
+                  uiDrawSelectorWindowContents();
+
                   break;
             }
          }

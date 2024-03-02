@@ -7,5 +7,6 @@ ulong uiInit( void );
 ulong uiRedrawConsole( void );
 ulong uiReadDirAndFillSelectorWindowContents( void );
 ulong uiDrawSelectorWindowContents( void );
+ulong uiDrawLoadingScreen( char *path );
 
 #endif
