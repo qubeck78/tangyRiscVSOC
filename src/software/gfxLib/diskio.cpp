@@ -224,7 +224,7 @@ int select (void)   /* 1:OK, 0:Timeout */
 {
     //CS_L();
     
-    bsp->gpoPort &= ( 1 ^ 0xffff );
+    bsp->gpoPort &= ( 1 ^ 0xffffffff );
     
     if (!wait_ready()) {
         deselect();

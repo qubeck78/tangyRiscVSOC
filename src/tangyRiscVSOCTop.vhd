@@ -55,13 +55,20 @@ port(
     i2sLRCk:            out     std_logic;
     i2sDOut:            out     std_logic;
        
-	--ext uart
-	extUartTx:	        out     std_logic;
-	extUartRx:	        in      std_logic;
-
     --tang uart
     tangUartTx:         out     std_logic;
     tangUartRx:         in      std_logic;
+
+    --configuration flash
+    tangFlashCSn:       out     std_logic;
+    tangFlashClk:       out     std_logic;
+    tangFlashMOSI:      out     std_logic;
+    tangFlashMISO:      in      std_logic;
+
+
+	--ext uart
+	extUartTx:	        out     std_logic;
+	extUartRx:	        in      std_logic;
 
     --sd card 
 	sdMciDat:	        inout   std_logic_vector( 3 downto 0 );	
@@ -590,11 +597,12 @@ signal   videoRamBA:       std_logic_vector( 13 downto 0 );
 signal   pgVSyncClkD2:     std_logic;
 
 -- gfx pixel gen signals
-signal   pgEnabled:        std_logic;
-signal   pggR:             std_logic_vector( 7 downto 0 );
-signal   pggG:             std_logic_vector( 7 downto 0 );
-signal   pggB:             std_logic_vector( 7 downto 0 ); 
-signal   pggDMARequest:    std_logic_vector( 1 downto 0 );
+signal   pgEnabled:             std_logic;
+signal   pggR:                  std_logic_vector( 7 downto 0 );
+signal   pggG:                  std_logic_vector( 7 downto 0 );
+signal   pggB:                  std_logic_vector( 7 downto 0 ); 
+signal   pggDMARequest:         std_logic_vector( 1 downto 0 );
+signal   pggDMARequestClkD2:    std_logic_vector( 1 downto 0 );
 
 -- system ram signals
 signal  fpgaCpuMemoryClock:         std_logic;
@@ -629,7 +637,7 @@ signal cpuDataMask:		std_logic_vector( 3 downto 0 );
 signal cpuResetGenCounter:  std_logic_vector( 15 downto 0 ); 
 
 -- gpo signals
-signal   gpoRegister:      std_logic_vector( 7 downto 0 );
+signal   gpoRegister:      std_logic_vector( 31 downto 0 );
 
 -- registers signals
 signal   registersClock:      std_logic;
@@ -704,6 +712,16 @@ signal   spiSClk:          std_logic;
 signal   spiMOSI:          std_logic;
 signal   spiMISO:          std_logic;
 
+-- tang flash SPI signals
+signal   flashSpiClock:         std_logic;
+signal   flashSpiCE:            std_logic;
+signal   flashSpiDoutForCPU:    std_logic_vector( 31 downto 0 );
+signal   flashSpiReady:         std_logic;
+
+signal   flashSpiSClk:          std_logic;
+signal   flashSpiMOSI:          std_logic;
+signal   flashSpiMISO:          std_logic;
+
 -- usb host signals
 signal   usbHostClock:           std_logic;
 signal   usbHostCE:              std_logic;
@@ -733,10 +751,10 @@ signal  i2sReady:           std_logic;
 
 
 begin
+    
 
 
 -- reset logic based on pll lock
-
     reset   <= not pllHDMILocked;
     resetn  <= not reset;
 
@@ -769,6 +787,9 @@ begin
 
 -- spi clock
     spiClock            <= clkd2_40;
+
+-- tang flash spi clock
+    flashSpiClock       <= clkd2_40;
 
 -- sdram direct memory access clock
     sdramDmaClock       <= clkd2_80;
@@ -943,6 +964,20 @@ port map(
     pgVideoMode       => vmMode( 5 downto 4 ),
     pgEnabled         => pgEnabled
 );
+
+--place dma request synchroniser
+
+pggDmaRequestInputSyncInst:inputSync
+generic map(
+    inputWidth  => 2
+)
+port map(
+    clock           => clkd2_80,
+    signalInput     => pggDMARequest,
+    signalOutput    => pggDMARequestClkD2
+);
+
+
 
 --place system ram
 
@@ -1149,6 +1184,8 @@ end process;
 
     i2sCE             <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"f06" else '0';
 
+    flashSpiCE        <= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"f07" else '0';
+    
 
 -- bus slaves ready signals mux
    cpuMemReady       <= systemRamReady when systemRAMCE = '1'
@@ -1160,10 +1197,8 @@ end process;
                         else blitterReady when blitterCE = '1' 
                         else fpAluReady when fpAluCE = '1' 
                         else i2sReady when i2sCE = '1' 
+                        else flashSpiReady when flashSpiCE = '1' 
                         else '1';
-
-
-
 
 
 -- bus slaves data outputs mux
@@ -1176,6 +1211,7 @@ end process;
                         blitterDoutForCPU                         when cpuAOutFull( 31 downto 20 ) = x"f02" else
                         fpAluDoutForCPU                           when cpuAOutFull( 31 downto 20 ) = x"f01" else
                         i2sDoutForCPU                             when cpuAOutFull( 31 downto 20 ) = x"f06" else 
+                        flashSpiDoutForCPU                        when cpuAOutFull( 31 downto 20 ) = x"f07" else                        
                         x"00000000";
 
                      
@@ -1258,7 +1294,7 @@ begin
          --default register values
          vmMode                  <= x"0000";
          dmaDisplayPointerStart  <= ( others => '0' );
-         gpoRegister             <= "01111111";             --turn on last LED by default
+         gpoRegister             <= x"0000" & "0000000101111111";             --turn on last LED, tang flash CS high by default
          
          tickTimerReset             <= '0';
                   
@@ -1308,11 +1344,11 @@ begin
                      --rw 0xf000000c - gpoPort
                      when x"03" =>
                
-                        registersDoutForCPU  <= x"0000" & x"00" & gpoRegister;
+                        registersDoutForCPU  <= gpoRegister;
                         
                         if cpuWr = '1' then
                         
-                           gpoRegister <= cpuDOut( 7 downto 0 );
+                           gpoRegister <= cpuDOut( 31 downto 0 );
                         
                         end if;
                         
@@ -1411,7 +1447,7 @@ port map(
   
 );  
 
--- place SPI   
+--place SD card SPI   
 
 sdMciClk    <= spiSClk;
 sdMciDat(3) <= gpoRegister( 0 ); --cs
@@ -1445,6 +1481,39 @@ port map(
    miso        => spiMISO
    
 );
+
+
+--place tang flash SPI
+tangFlashCSn    <= gpoRegister( 8 );
+tangFlashClk    <= flashSpiSClk;
+tangFlashMOSI   <= flashSpiMOSI;
+flashSpiMISO    <= tangFlashMISO;
+
+   
+flashSPIInst:SPI
+port map(
+
+   --cpu interface
+   reset       => reset,
+   clock       => flashSpiClock,
+
+   a           => cpuAOut( 15 downto 0 ),
+   din         => cpuDOut,
+   dout        => flashSpiDoutForCPU,
+   
+   ce          => flashSpiCE,
+   wr          => cpuWr,
+   dataMask    => cpuDataMask,
+   
+   ready       => flashSpiReady,
+   
+   --spi interface
+   sclk        => flashSpiSClk,
+   mosi        => flashSpiMOSI,
+   miso        => flashSpiMISO
+   
+);
+
 
 instHidUSBHostGen: if ( instHidUSBHost = true ) generate
 
@@ -1485,7 +1554,7 @@ port map(
     clockSdram              => sdramClock,
 
     --gfx display mode interface ( ch0 )
-    ch0DmaRequest           => pggDMARequest,
+    ch0DmaRequest           => pggDMARequestClkD2,
     ch0DmaPointerStart      => dmaDisplayPointerStart,
     ch0DmaPointerReset      => pgVSyncClkD2,
    

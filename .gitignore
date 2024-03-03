@@ -4,4 +4,3 @@ temp
 *.elf
 *.o
 *.disasm
-*.rec
