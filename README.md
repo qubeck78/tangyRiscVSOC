@@ -33,7 +33,7 @@ Please read Tang Nano 20K wiki article describing how to configure external PLL.
 https://wiki.sipeed.com/hardware/en/tang/tang-nano-20k/example/unbox.html#pll_clk
 
 
-Running software:
+### Running software:
 
 When You start the core, bootloader takes control. It displays a welcome message and waits for code to be uploaded via UART.
 In order to do so, just execute 'make send' in software example directory.
@@ -57,8 +57,17 @@ useTangUART:  boolean := true;  - means that Tang Nano 20K internal uart will be
 useTangUART:  boolean := false; - selects external uart for program upload ( needs converter )
 
 
+### Second stage bootloader:
 
-For USB HID host functionality:
+Allows running example programs from a sd-card. 
+
+Compile "secondStageBootloader', burn .bin file to fpga configuration flash memory
+at address 0x700000. Copy 'apps' and 'sys' directories from 'SD' dir to a sd-card.
+
+After powering the Tang Nano 20K board, press any key ( usb keyboard required :) ) and the second stage bootloader will be run.
+Select example with arrow keys and press enter to run it.
+
+### USB HID host functionality:
 
 Connect:
 
