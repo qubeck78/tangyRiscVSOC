@@ -349,16 +349,31 @@ int flashRead( ulong address, ulong length, uchar *buffer )
 
 void loadSecondStageBootloader()
 {
+   ulong *sbPtr;
 
-   print( (char*)"\nSecond stage\n" );
+   print( (char*)"\n\nLoading second stage\n" );
 
    flashRead( 0x700000, 0x20000, (uchar*)_SYSTEM_MEMORY_BASE );
 
-   print( (char*)"BOOT\n" );
+   sbPtr = (ulong*)_SYSTEM_MEMORY_BASE;
 
-   bootEntry = (void (*)(void)) _SYSTEM_MEMORY_BASE;
+   //check code signature (jump command)
+   if( *sbPtr == 0x0100006f )
+   {
 
-   (*bootEntry)();
+      print( (char*)"BOOT\n" );
+
+      bootEntry = (void (*)(void)) _SYSTEM_MEMORY_BASE;
+
+      (*bootEntry)();
+
+   }
+   else
+   {
+      print( (char*)"Invalid signature, please upload second stage bootloader to FPGA configuration memory at 0x700000\n" );
+
+      do{}while( 1 );
+   }
 
 }
 
@@ -393,7 +408,7 @@ int main()
    }
 
 
-   print( (char*) "\n\n\n\n" );  
+   print( (char*) "\n" );  
 
    spaceDistance( 40 - 13 ); print( (char*) "        |.\\__/.|    (~\\ \n" );
    spaceDistance( 40 - 13 ); print( (char*) "        | O O  |     ) ) \n" );
@@ -401,7 +416,10 @@ int main()
    spaceDistance( 40 - 13 ); print( (char*) "   .-- ((---- ((-------. \n" );
    spaceDistance( 40 - 13 ); print( (char*) "   |                   | \n" );
    spaceDistance( 40 - 13 ); print( (char*) "   |tangySOC bootloader| \n" );
-   spaceDistance( 40 - 13 ); print( (char*) "   |     B20240301     | \n" );
+   spaceDistance( 40 - 13 ); print( (char*) "   |     B20240303     | \n" );
+   spaceDistance( 40 - 13 ); print( (char*) "   |                   | \n" );
+   spaceDistance( 40 - 13 ); print( (char*) "   |   Press any key   | \n" );
+   spaceDistance( 40 - 13 ); print( (char*) "   |  to boot from SD  | \n" );
    spaceDistance( 40 - 13 ); print( (char*) "   |                   | \n" );
    spaceDistance( 40 - 13 ); print( (char*) "   `-------------------` \n\n" );
    
