@@ -130,8 +130,8 @@ ulong init()
    //i2s freq 48kHz @ 80Mhz base clock
    aud->i2sClockConfig = 0x0034001a;
 
-   //fifo read div to 3 ( 16kHz frequency )
-   aud->fifoReadConfig = 0x2;
+   //fifo read div to 2 ( 24kHz frequency )
+   aud->fifoReadConfig = 0x1;
 
    //stop dma
    aud->audioDmaConfig = 0x00;         
@@ -150,7 +150,7 @@ ulong init()
    hxcmod_init( &modctx );
 
    //config hxcmod
-   hxcmod_setcfg( &modctx, 16000, 0, 0 );
+   hxcmod_setcfg( &modctx, 24000, 0, 0 );
 
    return rv;
 }

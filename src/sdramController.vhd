@@ -1,7 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
-use IEEE.std_logic_arith.all;
 use IEEE.std_logic_unsigned.all;
+use IEEE.numeric_std.all;
 
 entity sdramController is
 port(
@@ -44,7 +44,8 @@ port(
     ce:         in  std_logic;
     wr:         in  std_logic;
     dataMask:   in  std_logic_vector( 3 downto 0 );
-   
+    instrCycle: in  std_logic;
+
     ready:      out std_logic; 
    
    
@@ -144,7 +145,8 @@ signal sdrcWrdAck:                  std_logic;
 
 type  dmaState_T is ( dmaIdle, dmaGfxFetch0, dmaGfxFetch1, dmaGfxFetch2, dmaGfxFetch3, 
                      dmaCpuWrite0, dmaCpuWrite1, 
-                     dmaCpuRead0, dmaCpuRead1, 
+                     dmaCpuRead0, dmaCpuRead1,
+                     dmaCpuICacheFill0, dmaCpuICacheFill1, dmaCpuICacheFill2, dmaCpuICacheFill3,
                      dmaCh1Read0, dmaCh1Read1,
                      dmaCh2Write0, dmaCh2Write1,   
                      dmaCh2Read0, dmaCh2Read1, 
@@ -165,6 +167,13 @@ signal   ch0DmaBufPointer:       std_logic_vector( 8 downto 0 );
 --ch0 doesn't have handshake, so requests have to be latched
 signal   ch0DmaRequestLatched:   std_logic_vector( 1 downto 0 );
 
+
+--cpu instruction cache
+
+type    cpuICacheDataArray_T    is array( 0 to 7 ) of std_logic_vector( 31 downto 0 );
+signal  cpuICacheDataArray:     cpuICacheDataArray_T;
+signal  cpuICacheAddress:       std_logic_vector( 20 downto 3 );
+signal  cpuICacheCounter:       std_logic_vector( 3 downto 0 );
 
 begin
 
@@ -273,7 +282,13 @@ begin
             dout        <= ( others => '0' );
             ready       <= '0';
              
-            dmaState <= dmaIdle;
+
+            --cpu cache
+            cpuICacheAddress    <= "111111111111111111";
+            cpuICacheCounter    <= ( others => '0' );
+
+
+            dmaState    <= dmaIdle;
      
         else
 
@@ -433,39 +448,82 @@ begin
                 --ch3 request
                 elsif ce = '1' then
                 
-                    if sdrcBusyn = '1' then
+                    --check if instruction fetch
+                    if instrCycle = '1' and wr = '0' then
 
-                        --common signals
-                        sdrcAddr    <= a( 20 downto 0 );
-                        sdrcDataLen <= x"00";
+                        --check if cache hit
+                        if a( 20 downto 3 ) = cpuICacheAddress( 20 downto 3 ) then
 
-                        if wr = '1' then
-                        
-                            --write
+                            --fetch data from cache
 
-                            sdrcDataIn  <= din;
+                            dout    <= cpuICacheDataArray( to_integer(  unsigned( a( 2 downto 0 ) ) ) );
                             
-                            sdrcDqm( 0 ) <= not dataMask( 0 );
-                            sdrcDqm( 1 ) <= not dataMask( 1 );
-                            sdrcDqm( 2 ) <= not dataMask( 2 );
-                            sdrcDqm( 3 ) <= not dataMask( 3 );
+                            ready <= '1';
 
-                            sdrcWrn     <= '0';
-
-                            dmaState    <= dmaCpuWrite0;
+                            --wait for bus cycle end
+                            dmaState    <=  dmaCpuRead1;
 
                         else
 
-                            --read
+                        --fill cache line
+                            if sdrcBusyn = '1' then
 
-                            sdrcRdn     <= '0';
+                                --common signals
+                                sdrcAddr                        <= a( 20 downto 3 ) & "000";
+                                sdrcDataLen                     <= x"08";           --8 32-bit words
 
-                            sdrcDqm     <= "0000";
-                            dmaState    <= dmaCpuRead0;
+                                sdrcRdn                         <= '0';
 
-                        end if; --wr = '1' or '0'
+                                sdrcDqm                         <= "0000";
 
-                    end if; --sdrcBusyn = '1'
+                                cpuICacheAddress( 20 downto 3 ) <= a( 20 downto 3 );
+                                cpuICacheCounter                <= ( others => '0' );
+                                dmaState                        <= dmaCpuICacheFill0;
+
+                            end if; --sdrcBusyn = '1'
+
+                        end if;
+
+
+
+                    else
+
+                    --data bus cycle
+                        if sdrcBusyn = '1' then
+
+                            --common signals
+                            sdrcAddr    <= a( 20 downto 0 );
+                            sdrcDataLen <= x"00";
+
+                            if wr = '1' then
+                            
+                                --write
+
+                                sdrcDataIn  <= din;
+                                
+                                sdrcDqm( 0 ) <= not dataMask( 0 );
+                                sdrcDqm( 1 ) <= not dataMask( 1 );
+                                sdrcDqm( 2 ) <= not dataMask( 2 );
+                                sdrcDqm( 3 ) <= not dataMask( 3 );
+
+                                sdrcWrn     <= '0';
+
+                                dmaState    <= dmaCpuWrite0;
+
+                            else
+
+                                --read
+
+                                sdrcRdn     <= '0';
+
+                                sdrcDqm     <= "0000";
+                                dmaState    <= dmaCpuRead0;
+
+                            end if; --wr = '1' or '0'
+
+                        end if; --sdrcBusyn = '1'
+                    
+                    end if; --instrCycle = '1'
                 
                 end if; --ce = '1'
 
@@ -729,6 +787,46 @@ begin
                     dmaState    <= dmaIdle;
 
                 end if;
+
+            when dmaCpuICacheFill0 => 
+
+                if sdrcWrdAck = '1' then
+
+                    sdrcRdn <= '1';
+
+                end if;
+
+                if sdrcRdValid = '1' then
+
+                    sdrcRdn <= '1';
+
+                    cpuICacheDataArray( 0 ) <= sdrcDataOut;
+                    cpuICacheCounter        <= cpuICacheCounter + 1;
+
+                    dmaState    <= dmaCpuICacheFill1;
+
+                end if;
+
+            when dmaCpuICacheFill1 => 
+
+                sdrcRdn <= '1';
+
+                if cpuICacheCounter = x"8" then
+                    
+                    dout        <= cpuICacheDataArray( to_integer(  unsigned( a( 2 downto 0 ) ) ) );
+                    ready       <= '1';
+
+                    dmaState    <= dmaCpuRead1;
+
+                else
+ 
+                    cpuICacheDataArray(  to_integer(  unsigned( cpuICacheCounter ) ) )  <= sdrcDataOut;
+                    cpuICacheCounter                                                    <= cpuICacheCounter + 1;
+           
+                    dmaState                                                            <= dmaCpuICacheFill1;
+
+                end if;
+
 
             when others =>
 
