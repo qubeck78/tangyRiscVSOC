@@ -425,6 +425,7 @@ port(
     ce:         in  std_logic;
     wr:         in  std_logic;
     dataMask:   in  std_logic_vector( 3 downto 0 );
+    instrCycle: in  std_logic;
    
     ready:      out std_logic; 
    
@@ -1588,7 +1589,8 @@ port map(
     ce                      => dmaMemoryCE,
     wr                      => cpuWr,
     dataMask                => cpuDataMask,
-   
+    instrCycle              => cpuMemInstr,
+
     ready                   => cpuDmaReady,
    
     --sdram interface
