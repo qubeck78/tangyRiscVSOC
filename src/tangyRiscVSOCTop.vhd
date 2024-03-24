@@ -787,7 +787,7 @@ begin
     uartClock           <= clkd2_80;
 
 -- spi clock
-    spiClock            <= clkd2_40;
+    spiClock            <= clkd2_80;
 
 -- tang flash spi clock
     flashSpiClock       <= clkd2_40;
@@ -796,7 +796,6 @@ begin
     sdramDmaClock       <= clkd2_80;
     
 -- sdram chip clock
-
     sdramClock          <= clkd2_80ps;
 
 -- usb host clock
