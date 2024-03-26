@@ -23,13 +23,7 @@
 
 #include "shellUI.h"
 #include "objViewer.h"
-
-
-#ifdef _GFXLIB_RISCV_FATFS
-
-extern FATFS   fatfs;         //fs object defined in osFile.cpp
-
-#endif
+#include "modPlayer.h"
 
 extern tgfTextOverlay   con;
 
@@ -46,21 +40,26 @@ tselector      selectors[2];
 ushort         activeSelectorIdx;
 ushort         inactiveSelectorIdx;
 
-int animLeds( int j );
-int init( void );
-int viewImage( char *fileName );
-int pathSelectParentDirectory( char* path );
+ulong animLeds( ulong j );
+ulong init( void );
+
+ulong pathSelectParentDirectory( char* path );
 char* pathFindExtension( char* fileName );
 ulong pathGetSelectedFileFromSelector( tselector *selector, char *fileName );
-int asciiTable( void );
-int viewImage( char* fileName );
-int viewFont( char* fileName );
-int viewHex( char* fileName );
-int viewFile( char* fileName );
+ulong asciiTable( void );
+
+ulong viewImage( char *fileName );
+ulong viewFont( char* fileName );
+ulong viewHex( char* fileName );
+ulong viewFile( char* fileName );
 ulong deleteFile( char *fileName );
 ulong copyFile( char *fromFileName, char *toFileName );
+ulong createDir( char *path );
 
-int animLeds( int j )
+
+
+
+ulong animLeds( ulong j )
 {  
       switch( j % 2 )
       {
@@ -82,9 +81,9 @@ int animLeds( int j )
    return 0;
 } 
 
-int init()
+ulong init()
 {
-   int rv;
+   ulong rv;
 
    rv = 0;
 
@@ -105,14 +104,7 @@ int init()
    screen.flags            = 0;
    screen.transparentColor = 0;
    screen.buffer           = osAlloc( screen.rowWidth * screen.height * 2, OS_ALLOC_MEMF_CHIP );   //osAlloc( 320 * 240 * 2 );
-   
-   if( screen.buffer == NULL )
-   {
-      toPrint( &con, ( char* )"\nCan't alloc screen\n" );
-      rv = 1;
-      return rv;
-   } 
-   
+      
    //display screen buffer
    gfDisplayBitmap( &screen );
 
@@ -128,13 +120,6 @@ int init()
    screen2.transparentColor   = 0;
    screen2.buffer             = osAlloc( screen.rowWidth * screen.height * 2, OS_ALLOC_MEMF_CHIP );   
    
-   if( screen2.buffer == NULL )
-   {
-      toPrint( &con, ( char* )"\nCan't alloc screen 2\n" );
-      rv = 1;
-      return rv;
-   } 
-
    //alloc z-buffer
 
    zBuffer.width              = 320;
@@ -144,12 +129,6 @@ int init()
    zBuffer.transparentColor   = 0;
    zBuffer.buffer             = osAlloc( zBuffer.rowWidth * ( zBuffer.height + 1 ) * 2, OS_ALLOC_MEMF_CHIP );
    
-   if( zBuffer.buffer == NULL )
-   {
-      toPrint( &con, (char*)"\nCan't alloc z buffer\n" );
-      rv = 1;
-      return rv;
-   } 
 
    gfFillRect( &zBuffer, 0, 0, zBuffer.width - 1, zBuffer.height - 1 , gfColor( 0, 0, 0 ) ); 
 
@@ -158,55 +137,34 @@ int init()
    //init usb HID stack
    rv = usbHIDInit();
 
-   if( rv )
-   {
-      toPrint( &con, ( char* )"USB HID init error\n" );
-      
-      rv = 1;
-      return rv;
-
-   }
-
    #endif
 
    //init events queue
-   osUIEventsInit(); 
+   rv = osUIEventsInit(); 
 
 
    //init filesystem
    rv = osFInit();
 
-   if( rv )
-   {
-      toPrint( &con, ( char* )"SD init error\n" );
-      
-      return rv;
-
-   }
-
-
    rv = gfLoadBitmapFS( &background, ( char* )"0:/shell/background.gbm" );
-   if( rv )
-   {
-      toPrint( &con, ( char* )"Can't load background.gbm\n" );
-      
-      return rv;
-   }
 
 
    gfBlitBitmap( &screen, &background, 0, 0 );
 
+   //3d obj viewer init
    rv = objvInit();
 
+   //Amiga module player init
+   rv = mpInit();
 
    return rv;
 }
 
 
-int pathSelectParentDirectory( char* path )
+ulong pathSelectParentDirectory( char* path )
 {
-   int i;
-   int slashIdx;
+   ulong i;
+   ulong slashIdx;
 
    slashIdx = -1;
 
@@ -253,11 +211,11 @@ ulong pathGetSelectedFileFromSelector( tselector *selector, char *fileName )
    return 0;
 }
 
-int asciiTable()
+ulong asciiTable()
 {
-   int         x;
-   int         y;
-   int         i;
+   short       x;
+   short       y;
+   short       i;
    tosUIEvent  event;
 
    con.textAttributes = 0x0f;
@@ -311,14 +269,14 @@ int asciiTable()
 }
 
 
-int viewImage( char* fileName )
+ulong viewImage( char* fileName )
 {
    tgfBitmap   img;
-   int         rv;
+   ulong       rv;
    tosUIEvent  event;
-   int         fileNameLength;
-   short       x;
-   short       y;
+   ulong       fileNameLength;
+   ushort      x;
+   ushort      y;
 
 
    con.textAttributes = 0x0f;
@@ -390,15 +348,15 @@ int viewImage( char* fileName )
    return rv;
 }
 
-int viewFont( char* fileName )
+ulong viewFont( char* fileName )
 {
    tgfFont     font;
-   int         rv;
+   ulong       rv;
    tosUIEvent  event;
-   int         fileNameLength;
-   int         x;
-   int         y;
-   int         i;
+   ulong       fileNameLength;
+   short       x;
+   short       y;
+   ulong       i;
 
    con.textAttributes = 0x0f;
 
@@ -474,23 +432,22 @@ int viewFont( char* fileName )
    return rv;
 }
 
-int viewHex( char* fileName )
+ulong viewHex( char* fileName )
 {
-   int         rv;
-   unsigned char  buf[32];
-   tosFile         in;
+   ulong       rv;
+   uchar       buf[32];
+   tosFile     in;
+
+   ushort      x;
+   ushort      y;
+   ulong       i;
+   uchar       c;
+
+   tosUIEvent  event;
+   ulong       nbr;
+   ushort      eofReached;
 
    rv = 0;
-
-   int         x;
-   int         y;
-   int            i;
-   unsigned char  c;
-
-   tosUIEvent     event;
-   ulong       nbr;
-   ushort         eofReached;
-
 
    if( osFOpen( &in, fileName, OS_FILE_READ ) )
    {
@@ -592,12 +549,12 @@ int viewHex( char* fileName )
    return rv;
 }
 
-int viewFile( char* fileName )
+ulong viewFile( char* fileName )
 {
-   int    rv;
+   ulong  rv;
    char   extension[32];
    char  *pExtension;
-   int       i;
+   ulong  i;
 
    rv = 0;
 
@@ -641,6 +598,10 @@ int viewFile( char* fileName )
    else if( strcmp( extension, ".obj" ) == 0 )
    {
       rv = objvView( fileName );
+   }
+   else if( strcmp( extension, ".mod" ) == 0 )
+   {
+      rv = mpPlay( fileName );
    }
 
 
@@ -839,6 +800,97 @@ ulong copyFile( char *fromFileName, char *toFileName )
    osFClose( &src );
    osFClose( &dst );
 
+   return 0;
+}
+
+ulong createDir( char *path )
+{
+   char        buf[32];
+   char        dirNameBuf[256];
+
+   tosUIEvent  event;
+   ushort      typeLoop;
+   ushort      idx;
+   uint8_t     keyCode;
+
+   strcpy( buf, "_                             " );
+
+
+   idx = 0;
+   do
+   {
+   
+      uiDrawInfoWindow( (char*)"Make directory", buf, _UI_INFO_WINDOW_BUTTONS_NONE );
+      
+      typeLoop = 0;
+
+      if( !osGetUIEvent( &event ) )
+      {
+
+         if( event.type == OS_EVENT_TYPE_KEYBOARD_KEYPRESS )
+         {
+
+            keyCode = event.arg1;
+
+            switch( keyCode )
+            {
+
+               case _KEYCODE_ESC:
+                  
+                  typeLoop = 2;
+                  
+                  break;
+
+               case _KEYCODE_ENTER:
+
+                  buf[idx] = 0;
+                  typeLoop = 1;
+
+                  break;
+
+               case _KEYCODE_BACKSPACE:
+
+                  if( idx > 0 )
+                  {
+                     idx--;
+
+                     buf[idx + 1]   = ' ';
+                     buf[idx]       = '_';
+                  }
+                  break;
+
+               default:
+
+                  if( ( ( keyCode >= '0' ) && ( keyCode <= '9' ) ) || ( ( keyCode >= 'a' ) && ( keyCode <= 'z' ) ) ||
+                     ( ( keyCode >= 'A' ) && ( keyCode <= 'Z' ) ) || keyCode == '.' || keyCode == ' ' || keyCode == '_' || keyCode == '-' )
+                  {
+                     if( idx < 29 )
+                     {
+                        buf[idx++]  = keyCode;
+                        buf[idx]    = '_';
+                     }
+
+                  } 
+
+                  break;
+            }
+
+
+         }
+
+      }
+
+   }while( ! typeLoop );
+
+   if( typeLoop == 1 )
+   {
+      strcpy( dirNameBuf, path );
+      strcat( dirNameBuf, "/" );
+      strcat( dirNameBuf, buf );
+
+      osMkDir( dirNameBuf );
+
+   }
    return 0;
 }
 
@@ -1104,6 +1156,18 @@ int main()
                      
                   break;
 
+               case _KEYCODE_F7:
+
+                  createDir( selectors[activeSelectorIdx].path );
+
+                  //re-read directory contents
+                  uiReadDirAndFillSelectorWindowContents( &selectors[0] );
+                  uiReadDirAndFillSelectorWindowContents( &selectors[1] );
+
+                  refreshScreen = 2;
+
+                  break;
+
                case _KEYCODE_F8:
 
                   //create full file path
@@ -1175,5 +1239,4 @@ int main()
       
    }while( 1 );
    
-
 } 

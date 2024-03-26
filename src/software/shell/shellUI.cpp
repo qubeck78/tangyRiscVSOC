@@ -32,7 +32,7 @@ int uiDrawStatusBar()
    toSetCursorPos( &con, 0, 0 );
    con.textAttributes   = 0xf0;
 
-   toPrintF( &con, ( char* )"tangyRiscVSOC Shell B20240324                                                   " );
+   toPrintF( &con, ( char* )"tangyRiscVSOC Shell B20240326                                                   " );
 
 
    toSetCursorPos( &con, 0, 28 );
@@ -67,7 +67,7 @@ int uiDrawStatusBar()
    con.textAttributes   = 0x0f;
    toPrintF( &con, ( char* )" " );
 
-   con.textAttributes   = 0xd5;
+   con.textAttributes   = 0xd7;
    toPrintF( &con, ( char* )"F7 mkdir" );
 
    con.textAttributes   = 0x0f;
