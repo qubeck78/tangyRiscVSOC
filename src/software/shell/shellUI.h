@@ -7,7 +7,12 @@
 
 #define _SELECTOR_WINDOW_HEIGHT  25
 
-typedef struct _selector_t
+#define _UI_INFO_WINDOW_BUTTONS_NONE   0
+#define _UI_INFO_WINDOW_BUTTONS_YESNO  1
+#define _UI_INFO_WINDOW_BUTTONS_OK     2
+#define _UI_INFO_WINDOW_BUTTONS_CANCEL 3
+
+typedef struct _tselector
 {
 
    char     path[256];
@@ -22,13 +27,13 @@ typedef struct _selector_t
    char     selectorFileNames[_SELECTOR_WINDOW_HEIGHT][_MAXFILENAMELENGTH + 1];
    ulong    selectorFileLengths[_SELECTOR_WINDOW_HEIGHT];
    
-}selector_t;
+}tselector;
 
 int uiDrawStatusBar( void );
-int uiDrawSelectorWindowFrame( selector_t *selector );
-int uiDrawSelectorWindowContents( selector_t *selector );
-int uiReadDirAndFillSelectorWindowContents( selector_t *selector );
-int uiDrawInfoWindow( char *title, char *contents );
+int uiDrawSelectorWindowFrame( tselector *selector );
+int uiDrawSelectorWindowContents( tselector *selector );
+int uiReadDirAndFillSelectorWindowContents( tselector *selector );
+ulong uiDrawInfoWindow( char *title, char *contents, ulong buttons );
 
 #endif
 

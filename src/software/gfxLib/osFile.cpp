@@ -712,3 +712,72 @@ ulong osFSize( char *path )
 
    return rv;
 }
+
+
+ulong osFDelete( char *path )
+{
+
+   #if defined( _GFXLIB_STM32_FATFS ) || defined( _GFXLIB_MC68K_FATFS ) || defined( _GFXLIB_RISCV_FATFS )
+   
+   FRESULT  rc;
+
+   rc = f_unlink( path );
+
+   if( rc == FR_OK )
+   {
+      return 0;
+   }
+   else
+   {
+      return 1;
+   }
+
+   #endif
+
+   return 1;
+}
+
+ulong osMkDir( char *path )
+{
+   #if defined( _GFXLIB_STM32_FATFS ) || defined( _GFXLIB_MC68K_FATFS ) || defined( _GFXLIB_RISCV_FATFS )
+   
+   FRESULT  rc;
+
+   rc = f_mkdir( path );
+
+   if( rc == FR_OK )
+   {
+      return 0;
+   }
+   else
+   {
+      return 1;
+   }
+
+   #endif
+
+   return 1;
+}
+
+ulong osRename( char *pathOld, char *pathNew )
+{
+   #if defined( _GFXLIB_STM32_FATFS ) || defined( _GFXLIB_MC68K_FATFS ) || defined( _GFXLIB_RISCV_FATFS )
+   
+   FRESULT  rc;
+
+   rc = f_rename( pathOld, pathNew );
+
+   if( rc == FR_OK )
+   {
+      return 0;
+   }
+   else
+   {
+      return 1;
+   }
+
+   #endif
+
+   return 1;
+   
+}

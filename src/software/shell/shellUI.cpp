@@ -23,8 +23,6 @@ tosDirItem        dirItem;
 
 extern tgfBitmap        background;
 
-extern char             lfnBuf[ 512 + 16];
-
 int uiDrawStatusBar()
 {
    int rv;
@@ -45,13 +43,19 @@ int uiDrawStatusBar()
    con.textAttributes   = 0x0f;
    toPrintF( &con, ( char* )" " );
 
+   con.textAttributes   = 0xd5;
+   toPrintF( &con, ( char* )"F2 download" );
+
+   con.textAttributes   = 0x0f;
+   toPrintF( &con, ( char* )" " );
+
    con.textAttributes   = 0xd7;
    toPrintF( &con, ( char* )"F3 hex view" );
 
    con.textAttributes   = 0x0f;
    toPrintF( &con, ( char* )" " );
 
-   con.textAttributes   = 0xd5;
+   con.textAttributes   = 0xd7;
    toPrintF( &con, ( char* )"F5 copy" );
 
    con.textAttributes   = 0x0f;
@@ -64,10 +68,16 @@ int uiDrawStatusBar()
    toPrintF( &con, ( char* )" " );
 
    con.textAttributes   = 0xd5;
+   toPrintF( &con, ( char* )"F7 mkdir" );
+
+   con.textAttributes   = 0x0f;
+   toPrintF( &con, ( char* )" " );
+
+   con.textAttributes   = 0xd7;
    toPrintF( &con, ( char* )"F8 delete" );
 
    con.textAttributes   = 0x0f;
-   toPrintF( &con, ( char* )"                         " );
+   toPrintF( &con, ( char* )"    " );
 
 
    toSetCursorPos( &con, 0, 29 );
@@ -99,7 +109,7 @@ int uiDrawStatusBar()
    return rv;
 }
 
-int uiDrawSelectorWindowFrame( selector_t *selector )
+int uiDrawSelectorWindowFrame( tselector *selector )
 {
    int      rv;
    ulong    i;
@@ -161,7 +171,7 @@ int uiDrawSelectorWindowFrame( selector_t *selector )
 }
 
 
-int uiDrawSelectorWindowContents( selector_t *selector )
+int uiDrawSelectorWindowContents( tselector *selector )
 {
    int      rv;
    ulong    i;
@@ -214,7 +224,7 @@ int uiDrawSelectorWindowContents( selector_t *selector )
 }
 
 
-int uiReadDirAndFillSelectorWindowContents( selector_t *selector)
+int uiReadDirAndFillSelectorWindowContents( tselector *selector)
 {
    int rv;
    int i;
@@ -240,8 +250,6 @@ int uiReadDirAndFillSelectorWindowContents( selector_t *selector)
 
    do
    {
-      lfnBuf[0] = 0;
-
       rv = osDirRead( &dir, &dirItem );
 
       if( rv )
@@ -277,20 +285,29 @@ int uiReadDirAndFillSelectorWindowContents( selector_t *selector)
    return 0;
 }
 
-int uiDrawInfoWindow( char *title, char *contents )
+ulong uiDrawInfoWindow( char *title, char *contents, ulong buttons )
 {
-   ulong wy;
+   ushort wy;
+   ushort wx;
    char  buf[80];
    ulong i;
    ulong j;
-   ulong width;
+   ushort width;
 
 
    width = strlen( contents );
 
 
-   wy = ( con.height / 2 ) - 1;
+   if( buttons == _UI_INFO_WINDOW_BUTTONS_NONE )
+   {
+      wy = ( con.height / 2 ) - 1;
+   }
+   else
+   {
+      wy = ( con.height / 2 ) - 2;
+   }
 
+   wx = 40 - ( ( width + 2 ) / 2 );
    
    buf[0] = 0xda;
 
@@ -314,34 +331,82 @@ int uiDrawInfoWindow( char *title, char *contents )
    buf[width+1] = 0xbf;
    buf[width+2] = 0x00;
    
-   toSetCursorPos( &con, 21, wy - 1);
+   toSetCursorPos( &con, wx, wy - 1);
    con.textAttributes   = 0x0e;
    toPrint( &con, buf );
 
    buf[0] = 0xb3;
 
-   j = strlen( contents );
 
    for( i = 0; i < width; i++ )
    {
 
-      if( i < j )
-      {
-         buf[ 1 + i ] = contents[i];
-      }
-      else
-      {
-         buf[ 1 + i ] = ' ';
-      }
+      buf[ 1 + i ] = contents[i];
 
    }
 
    buf[width+1] = 0xb3;
    buf[width+2] = 0x00;
 
-   toSetCursorPos( &con, 21, wy );
+   toSetCursorPos( &con, wx, wy );
    toPrint( &con, buf );
 
+   if( buttons != _UI_INFO_WINDOW_BUTTONS_NONE )
+   {
+
+      buf[0] = 0xb3;
+
+      for( i = 0; i < width; i++ )
+      {
+
+         buf[ 1 + i ] = ' ';
+
+      }
+
+      buf[width+1] = 0xb3;
+      buf[width+2] = 0x00;
+
+      toSetCursorPos( &con, wx, wy + 1 );
+      toPrint( &con, buf );
+
+
+      switch( buttons )
+      {
+         case _UI_INFO_WINDOW_BUTTONS_YESNO:
+
+            toSetCursorPos( &con, wx + 2, wy + 1 );
+            toPrint( &con, (char*)"YES" );
+            
+            toSetCursorPos( &con, wx + width - 3, wy + 1 );
+            toPrint( &con, (char*)"NO" );
+
+            break;
+
+         case _UI_INFO_WINDOW_BUTTONS_OK:
+
+            toSetCursorPos( &con, 39, wy + 1 );
+            toPrint( &con, (char*)"OK" );
+
+            break;
+
+         case _UI_INFO_WINDOW_BUTTONS_CANCEL:
+
+            toSetCursorPos( &con, 37, wy + 1 );
+            toPrint( &con, (char*)"CANCEL" );
+
+            break;
+      }
+
+
+      toSetCursorPos( &con, wx, wy + 2 );
+
+   }
+   else
+   {
+   
+      toSetCursorPos( &con, wx, wy + 1 );
+
+   }
 
    buf[0] = 0xc0;
 
@@ -353,7 +418,6 @@ int uiDrawInfoWindow( char *title, char *contents )
    buf[width+1] = 0xd9;
    buf[width+2] = 0x00;
 
-   toSetCursorPos( &con, 21, wy + 1 );
    toPrint( &con, buf );
 
    con.textAttributes   = 0x0f;

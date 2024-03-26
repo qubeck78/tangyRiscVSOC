@@ -787,7 +787,7 @@ begin
     uartClock           <= clkd2_80;
 
 -- spi clock
-    spiClock            <= clkd2_80;
+    spiClock            <= clkd2_40;
 
 -- tang flash spi clock
     flashSpiClock       <= clkd2_40;

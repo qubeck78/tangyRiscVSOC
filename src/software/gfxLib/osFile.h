@@ -109,8 +109,12 @@ ulong osFGetS( tosFile *file, uchar *buffer, ulong maxLength );
 ulong osDirOpen( tosDir *dir, char *path );
 ulong osDirClose( tosDir *dir );
 ulong osDirRead( tosDir *dir, tosDirItem *dirItem );
-ulong osFSize( char *path );
 
+//todo: add sdl compatible code
+ulong osFSize( char *path );
+ulong osFDelete( char *path );
+ulong osMkDir( char *path );
+ulong osRename( char *pathOld, char *pathNew );
 
 #endif
 
