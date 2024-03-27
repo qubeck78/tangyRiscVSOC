@@ -2,37 +2,31 @@
 
 #include <cstring>
 #include <climits>
+#include <cstdio>
 
-#include "../gfxLib/bsp.h"
-#include "../gfxLib/osAlloc.h"
 #include "../gfxLib/osFile.h"
 #include "../gfxLib/gfBitmap.h"
-#include "../gfxLib/gfDrawing.h"
 #include "../gfxLib/gfFont.h"
-#include "../gfxLib/gfGouraud.h"
-#include "../gfxLib/gfJPEG.h"
-#include "../gfxLib/osUIEvents.h"
-#include "../gfxLib/usbHID.h"
 
 
-extern tgfBitmap     screen;
+extern tgfBitmap        screen;
 extern tgfTextOverlay   con;
 
-tosDir            dir;
-tosDirItem        dirItem;
+tosDir                  dir;
+tosDirItem              dirItem;
 
 extern tgfBitmap        background;
 
-int uiDrawStatusBar()
+ulong uiDrawStatusBar()
 {
-   int rv;
+   ulong rv;
 
    rv = 0;
 
    toSetCursorPos( &con, 0, 0 );
    con.textAttributes   = 0xf0;
 
-   toPrintF( &con, ( char* )"tangyRiscVSOC Shell B20240326                                                   " );
+   toPrintF( &con, ( char* )"tangyRiscVSOC Shell B20240327                                                   " );
 
 
    toSetCursorPos( &con, 0, 28 );
@@ -43,7 +37,7 @@ int uiDrawStatusBar()
    con.textAttributes   = 0x0f;
    toPrintF( &con, ( char* )" " );
 
-   con.textAttributes   = 0xd5;
+   con.textAttributes   = 0xd7;
    toPrintF( &con, ( char* )"F2 download" );
 
    con.textAttributes   = 0x0f;
@@ -61,7 +55,7 @@ int uiDrawStatusBar()
    con.textAttributes   = 0x0f;
    toPrintF( &con, ( char* )" " );
 
-   con.textAttributes   = 0xd5;
+   con.textAttributes   = 0xd7;
    toPrintF( &con, ( char* )"F6 rename/move" );
 
    con.textAttributes   = 0x0f;
@@ -109,9 +103,9 @@ int uiDrawStatusBar()
    return rv;
 }
 
-int uiDrawSelectorWindowFrame( tselector *selector )
+ulong uiDrawSelectorWindowFrame( tselector *selector )
 {
-   int      rv;
+   ulong    rv;
    ulong    i;
    ulong    j;
    char     buf[50];
@@ -171,14 +165,16 @@ int uiDrawSelectorWindowFrame( tselector *selector )
 }
 
 
-int uiDrawSelectorWindowContents( tselector *selector )
+ulong uiDrawSelectorWindowContents( tselector *selector )
 {
-   int      rv;
+   ulong    rv;
    ulong    i;
    ulong    j;
+   ulong    idx;
+
    char     buf[50];
    ushort   position;
-
+   char     buf2[16];
 
 
    position = selector->x + 1;
@@ -188,7 +184,7 @@ int uiDrawSelectorWindowContents( tselector *selector )
    con.textAttributes   = 0x0f;
    for( i = 0; i < selector->selectorWindowHeight; i++ )
    {
-      strcpy( buf, selector->selectorFileNames[i] );
+      strncpy( buf, selector->selectorFileNames[i], 38 );
       for( j = strlen( buf ); j < 38; j++ )
       {
          buf[j]      = ' ';
@@ -204,7 +200,20 @@ int uiDrawSelectorWindowContents( tselector *selector )
          buf[j++] = 'r';
          buf[j++] = ')';
       }
+      else
+      {
+         if( selector->selectorFileNames[i][0] != 0 )
+         {
+            sprintf( buf2, "%d", selector->selectorFileLengths[i] );
 
+            idx = 38 - strlen( buf2 );
+            for( j = 0; j < strlen( buf2 ); j++ )
+            {
+               buf[idx + j] = buf2[j];
+            }
+         }
+      }
+ 
       toSetCursorPos( &con, position, 2 + i );
 
       if(( selector->selectorCursorPos == i ) && ( selector->selectorActive ) )
@@ -224,11 +233,11 @@ int uiDrawSelectorWindowContents( tselector *selector )
 }
 
 
-int uiReadDirAndFillSelectorWindowContents( tselector *selector)
+ulong uiReadDirAndFillSelectorWindowContents( tselector *selector)
 {
-   int rv;
-   int i;
-   int j;
+   ulong rv;
+   ulong i;
+   ulong j;
 
 
    rv = 0;
@@ -287,13 +296,12 @@ int uiReadDirAndFillSelectorWindowContents( tselector *selector)
 
 ulong uiDrawInfoWindow( char *title, char *contents, ulong buttons )
 {
-   ushort wy;
-   ushort wx;
-   char  buf[80];
-   ulong i;
-   ulong j;
-   ushort width;
-
+   ulong    wy;
+   ulong    wx;
+   char     buf[80];
+   ulong    i;
+   ulong    j;
+   ushort   width;
 
    width = strlen( contents );
 

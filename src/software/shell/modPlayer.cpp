@@ -1,10 +1,22 @@
 
 #include "modPlayer.h"
 
+#include <cstdio>
 
 //HxCModPlayer
 //https://github.com/jfdelnero/HxCModPlayer
 #include "hxcmod.h"
+
+#include "../gfxLib/bsp.h"
+
+#include "../gfxLib/osAlloc.h"
+#include "../gfxLib/osFile.h"
+#include "../gfxLib/gfFont.h"
+#include "../gfxLib/osUIEvents.h"
+
+
+#include "shellUI.h"
+
 
 modcontext  modctx;
 short      *audioData;
@@ -25,8 +37,8 @@ ulong mpInit()
    //i2s freq 48kHz @ 80Mhz base clock
    aud->i2sClockConfig  = 0x0034001a;
 
-   //fifo read div to 3 ( 16kHz frequency )
-   aud->fifoReadConfig  = 0x2;
+   //fifo read div to 2 ( 24kHz frequency )
+   aud->fifoReadConfig  = 0x1;
 
    //stop dma
    aud->audioDmaConfig  = 0x00;
@@ -43,7 +55,7 @@ ulong mpInit()
    hxcmod_init( &modctx );
 
    //config hxcmod
-   hxcmod_setcfg( &modctx, 48000 / 3, 0, 0 );
+   hxcmod_setcfg( &modctx, 48000 / 2, 0, 0 );
 
    return rv;
 }
@@ -56,6 +68,12 @@ ulong mpPlay( char *fileName )
    ulong          nbr;
    ulong          audioDmaStatus;
    ulong          quitPlayer;
+   char           buf[60];
+   ulong          i;
+   ulong          j;
+
+
+   uiDrawInfoWindow( (char*)"Loading", fileName, _UI_INFO_WINDOW_BUTTONS_NONE );
 
 
    audioModDataLength = osFSize( fileName );
@@ -92,6 +110,8 @@ ulong mpPlay( char *fileName )
    //length in samples ( 16-bit) -> half of the buffer
    hxcmod_fillbuffer( &modctx, audioDataL, audioDataLength / 4, NULL );
 
+
+
    //play audio buffer :)
    aud->audioDmaPointer = ( (ulong)audioData - _SYSTEM_MEMORY_BASE ) / 4;
    aud->audioDmaLength  = ( audioDataLength / 4 ) - 1;      //32 bit tranfer, 2 samples per count
@@ -102,6 +122,31 @@ ulong mpPlay( char *fileName )
 
    do
    {
+
+
+      if( modctx.song.length > 0 )
+      {
+         j =  modctx.tablepos * 40 / modctx.song.length;
+      }
+      else
+      {
+         j = 0;
+      }
+
+      strcpy( buf, "" );
+      for( i = 0; i < 40; i++ )
+      {
+         if( i >= j )
+         {
+            strcat( buf, "\xb0" );
+         }
+         else
+         {
+            strcat( buf, "\xb1" );
+         }
+      }
+
+      uiDrawInfoWindow( fileName, buf, _UI_INFO_WINDOW_BUTTONS_NONE );
 
       do
       {
@@ -124,19 +169,12 @@ ulong mpPlay( char *fileName )
       { 
          if( event.type == OS_EVENT_TYPE_KEYBOARD_KEYPRESS )
          {
-            switch( event.arg1 )
-            {
-               case _KEYCODE_ESC:
 
-                  aud->audioDmaConfig  = 0x00;  //stop audio dma
-                  
-                  quitPlayer = 1;
+               aud->audioDmaConfig  = 0x00;  //stop audio dma                  
+               quitPlayer = 1;
 
-                  break;  
-            }
          }
       }
- 
 
    }while( !quitPlayer );
 

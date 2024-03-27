@@ -773,7 +773,7 @@ ulong osRename( char *pathOld, char *pathNew )
    }
    else
    {
-      return 1;
+      return rc;
    }
 
    #endif

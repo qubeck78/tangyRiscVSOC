@@ -29,10 +29,10 @@ typedef struct _tselector
    
 }tselector;
 
-int uiDrawStatusBar( void );
-int uiDrawSelectorWindowFrame( tselector *selector );
-int uiDrawSelectorWindowContents( tselector *selector );
-int uiReadDirAndFillSelectorWindowContents( tselector *selector );
+ulong uiDrawStatusBar( void );
+ulong uiDrawSelectorWindowFrame( tselector *selector );
+ulong uiDrawSelectorWindowContents( tselector *selector );
+ulong uiReadDirAndFillSelectorWindowContents( tselector *selector );
 ulong uiDrawInfoWindow( char *title, char *contents, ulong buttons );
 
 #endif
