@@ -340,7 +340,7 @@ ulong uiDrawInfoWindow( char *title, char *contents, ulong buttons )
    buf[width+2] = 0x00;
    
    toSetCursorPos( &con, wx, wy - 1);
-   con.textAttributes   = 0x0e;
+   con.textAttributes   = 0x8e;
    toPrint( &con, buf );
 
    buf[0] = 0xb3;

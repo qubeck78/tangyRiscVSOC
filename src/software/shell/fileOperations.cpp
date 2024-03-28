@@ -4,13 +4,16 @@
 #include "../gfxLib/osFile.h"
 #include "../gfxLib/osUIEvents.h"
 #include "../gfxLib/gfBitmap.h"
+#include "../gfxLib/gfFont.h"
+#include "../gfxLib/osSerial.h"
 
 #include "shellUI.h"
 #include "fileOperations.h"
 
-extern char       fileNameBuf1[ 256 ];
-extern char       fileNameBuf2[ 256 ];
-extern tgfBitmap  screen2;
+extern char             fileNameBuf1[ 256 ];
+extern char             fileNameBuf2[ 256 ];
+extern tgfBitmap        screen2;
+extern tgfTextOverlay   con;
 
 
 ulong pathSelectParentDirectory( char* path )
@@ -463,7 +466,73 @@ ulong renameFile( char *path, char *fileName )
 
 ulong downloadFile( char *path )
 {
+   long  rv;
+   ulong i;
 
+
+   rv = osSerialOpen( 0, 460800 );
+
+   if( rv )
+   {
+      return 1;
+   }
+
+
+   uiDrawInfoWindow( (char*)"Download", (char*)"Waiting for connection", _UI_INFO_WINDOW_BUTTONS_CANCEL );
+
+   tosUIEvent  event;
+
+
+   osSerialClearRxFifo( 0 );
+
+   i = 0;
+
+   do
+   {
+      if( !osGetUIEvent( &event ) )
+      {
+
+         if( event.type == OS_EVENT_TYPE_KEYBOARD_KEYPRESS )
+         {
+            if( ( event.arg1 == 'c' ) || ( event.arg1 == 27 ) )
+            {
+               i = 2;   //abort
+            }
+         }
+      }
+
+      if( osSerialGetC( 0 ) == ':' )
+      {
+         i = 1;   //host sent something
+      }
+
+
+   }while( !i );
+
+   if( i == 2)
+   {
+      osSerialClose( 0 );
+      return 0;
+   }
+
+   fileNameBuf1[0] = ':';
+   fileNameBuf1[1] = 0;
+
+   osSerialGetS( 0, &fileNameBuf1[1], 254 );
+
+
+   toPrintF( &con, (char*)"\n|%s|\n", fileNameBuf1 );
+
+   event.type = 0;
+   do
+   {
+      osGetUIEvent( &event );
+   
+   }while( event.type != OS_EVENT_TYPE_KEYBOARD_KEYPRESS );
+
+   
+
+   osSerialClose( 0 );
 
    return 0;
 }
