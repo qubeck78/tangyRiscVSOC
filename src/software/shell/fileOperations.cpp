@@ -464,10 +464,85 @@ ulong renameFile( char *path, char *fileName )
    return 0;   
 }
 
+ulong atoiHex( char *buf, long index, long digits )
+{
+   ulong rv;
+   ulong i;
+   char  c;
+
+   rv = 0;
+
+   for( i = 0; i < digits; i++ )
+   {
+      rv = rv << 4;
+
+      c = buf[index++];
+
+      if( ( c >= '0' ) && ( c <= '9') )
+      {
+         rv |= c - '0';
+      }
+      else if( ( c >= 'A' ) && ( c <= 'F' ) )
+      {
+         rv |= c - 'A' + 10;
+      }
+      else if( ( c >='a' ) && ( c <= 'f' ) )
+      {
+         rv |= c - 'a' + 10;
+      }
+   }
+
+   return rv;
+}
+
+ulong dfDecodeFileInformation( char *rxbuf, char *fileName, ulong *fileLength )
+{
+   ulong idx;
+   ulong fnameLength;
+   ulong i;
+
+   if( rxbuf == NULL )
+   {
+      return 1;
+   }
+   if( fileName == NULL )
+   {
+      return 1;
+   }
+   if( fileLength == NULL )
+   {
+      return 1;
+   }
+
+   if( ( rxbuf[0] != ':' ) || ( rxbuf[1] != '0' ) || ( rxbuf[2] != '0' ) )
+   {
+      return 2;
+   }
+
+   idx = 3;
+
+   fnameLength = atoiHex( rxbuf, 3, 2 );
+
+   idx += 2;
+
+   for( i = 0; i < fnameLength; i++ )
+   {
+      fileName[i]       = atoiHex( rxbuf, idx, 2 );
+      fileName[i + 1]   = 0;
+      
+      idx               += 2;
+   }
+
+   *fileLength = atoiHex( rxbuf, idx, 8 );
+   return 0;
+}
+
+
 ulong downloadFile( char *path )
 {
    long  rv;
    ulong i;
+   ulong fileSize;
 
 
    rv = osSerialOpen( 0, 460800 );
@@ -515,13 +590,26 @@ ulong downloadFile( char *path )
       return 0;
    }
 
-   fileNameBuf1[0] = ':';
-   fileNameBuf1[1] = 0;
+   fileNameBuf2[0] = ':';
+   fileNameBuf2[1] = 0;
 
-   osSerialGetS( 0, &fileNameBuf1[1], 254 );
+   osSerialGetS( 0, &fileNameBuf2[1], 254 );
 
+   toPrintF( &con, (char*)"\n|%s|\n", fileNameBuf2 );
 
-   toPrintF( &con, (char*)"\n|%s|\n", fileNameBuf1 );
+   if( dfDecodeFileInformation( fileNameBuf2, fileNameBuf1, &fileSize ) )
+   {
+
+      osSerialPutC( 0, '!' );
+      osSerialClose( 0 );
+      return 1;
+
+   }
+
+   osSerialPutC( 0, '*' );
+
+   toPrintF( &con, (char*)"|%s|%d\n", fileNameBuf1, fileSize );
+
 
    event.type = 0;
    do

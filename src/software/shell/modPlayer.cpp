@@ -5,6 +5,10 @@
 
 //HxCModPlayer
 //https://github.com/jfdelnero/HxCModPlayer
+
+//sdl audio
+////https://gist.github.com/armornick/3447121
+
 #include "hxcmod.h"
 
 #include "../gfxLib/bsp.h"
