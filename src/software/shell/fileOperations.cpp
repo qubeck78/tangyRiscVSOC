@@ -495,13 +495,13 @@ ulong atoiHex( char *buf, long index, long digits )
    return rv;
 }
 
-ulong dfDecodeFileInformation( char *rxbuf, char *fileName, ulong *fileLength )
+ulong dfDecodeFileInformation( char *rxBuf, char *fileName, ulong *fileLength )
 {
    ulong idx;
    ulong fnameLength;
    ulong i;
 
-   if( rxbuf == NULL )
+   if( rxBuf == NULL )
    {
       return 1;
    }
@@ -514,36 +514,107 @@ ulong dfDecodeFileInformation( char *rxbuf, char *fileName, ulong *fileLength )
       return 1;
    }
 
-   if( ( rxbuf[0] != ':' ) || ( rxbuf[1] != '0' ) || ( rxbuf[2] != '0' ) )
+   if( ( rxBuf[0] != ':' ) || ( rxBuf[1] != '0' ) || ( rxBuf[2] != '0' ) )
    {
       return 2;
    }
 
    idx = 3;
 
-   fnameLength = atoiHex( rxbuf, 3, 2 );
+   fnameLength = atoiHex( rxBuf, 3, 2 );
 
    idx += 2;
 
    for( i = 0; i < fnameLength; i++ )
    {
-      fileName[i]       = atoiHex( rxbuf, idx, 2 );
+      fileName[i]       = atoiHex( rxBuf, idx, 2 );
       fileName[i + 1]   = 0;
       
       idx               += 2;
    }
 
-   *fileLength = atoiHex( rxbuf, idx, 8 );
+   *fileLength = atoiHex( rxBuf, idx, 8 );
+   return 0;
+}
+
+
+ulong dfDecodeFileContents( char *rxBuf, tosFile *out, ulong *fileIdx )
+{
+   ulong length;
+   ulong i;
+   uchar fileContentsBuf[32];
+
+   length   = 0;
+
+   if( rxBuf == NULL )
+   {
+      return 3;
+   }
+   if( out == NULL )
+   {
+      return 3;
+   }
+   if( fileIdx == NULL )
+   {
+      return 3;
+   }
+
+   if( strlen( rxBuf ) < 5 )
+   {
+      //error
+      return 2;
+   }
+
+   if( rxBuf[0] != ':' )
+   {
+      return 2;
+   }
+
+   if( ( rxBuf[1] == '0' ) && ( rxBuf[2] == '2' ) )
+   {
+      return 1;   //eof
+   }
+
+
+   if( ( rxBuf[1] == '0' ) && ( rxBuf[2] == '1' ) )
+   {
+      //file contents
+      //:01lld0d1d2d3d4..dncc
+
+      length = atoiHex( rxBuf, 3, 2 );
+
+      if( length > 32 )
+      {
+         return 2;
+      }
+
+      *fileIdx += length;
+
+      for( i = 0; i < length ; i++ )
+      {
+         fileContentsBuf[i] = atoiHex( rxBuf, 5 + i * 2, 2 );
+      }
+
+      if( osFWrite( out, fileContentsBuf, length ) )
+      {
+         return 2;
+      }
+   }
+
    return 0;
 }
 
 
 ulong downloadFile( char *path )
 {
-   long  rv;
-   ulong i;
-   ulong fileSize;
-
+   long     rv;
+   ulong    i;
+   ulong    j;
+   ulong    fileSize;
+   ulong    fileIdx;
+   char     progressBarBuf[80];
+   ulong    abort;
+   tosFile  out;
 
    rv = osSerialOpen( 0, 460800 );
 
@@ -595,8 +666,6 @@ ulong downloadFile( char *path )
 
    osSerialGetS( 0, &fileNameBuf2[1], 254 );
 
-   toPrintF( &con, (char*)"\n|%s|\n", fileNameBuf2 );
-
    if( dfDecodeFileInformation( fileNameBuf2, fileNameBuf1, &fileSize ) )
    {
 
@@ -606,20 +675,88 @@ ulong downloadFile( char *path )
 
    }
 
+   strcpy( fileNameBuf2, path );
+   strcat( fileNameBuf2, "/" );
+   strcat( fileNameBuf2, fileNameBuf1 );
+
+
+   if( osFOpen( &out, fileNameBuf2, OS_FILE_WRITE ) )
+   {
+      osFClose( &out );
+      
+      osSerialPutC( 0, '!' );
+
+      return 1;
+   }
+
+
+
    osSerialPutC( 0, '*' );
 
-   toPrintF( &con, (char*)"|%s|%d\n", fileNameBuf1, fileSize );
+   fileIdx = 0;
 
 
-   event.type = 0;
+
+   abort = 0;
+
    do
    {
-      osGetUIEvent( &event );
-   
-   }while( event.type != OS_EVENT_TYPE_KEYBOARD_KEYPRESS );
+      if( fileSize > 0 )
+      {
+         j =  fileIdx * 40 / fileSize;
+      }
 
-   
+      strcpy( progressBarBuf, "" );
+      for( i = 0; i < 40; i++ )
+      {
+         if( i >= j )
+         {
+            strcat( progressBarBuf, "\xb0" );
+         }
+         else
+         {
+            strcat( progressBarBuf, "\xb1" );
+         }
+      }
+      uiDrawInfoWindow( fileNameBuf2, progressBarBuf, _UI_INFO_WINDOW_BUTTONS_CANCEL );
 
+      fileNameBuf1[0] = 0;
+      osSerialGetS( 0, fileNameBuf1, 255 );
+
+
+      rv = dfDecodeFileContents( fileNameBuf1, &out, &fileIdx );
+
+      if( rv == 0 )
+      {
+         osSerialPutC( 0, '*' );
+      }
+      else if( rv == 1 )
+      {
+         //eof
+         abort = 1;
+      }
+      else
+      {
+         //error
+         abort = 2;
+      }
+
+      event.type = 0;
+      if( !osGetUIEvent( &event ) )
+      {
+         if( event.type == OS_EVENT_TYPE_KEYBOARD_KEYPRESS )
+         {
+            if( ( event.arg1 == 'c' ) || ( event.arg1 == 'C' ) || ( event.arg1 == 27 ) )
+            {
+               abort = 2;
+            }
+         }
+      } 
+   
+   }while( !abort );
+
+
+   osFClose( &out );
    osSerialClose( 0 );
 
    return 0;
