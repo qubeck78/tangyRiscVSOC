@@ -65,14 +65,21 @@ ulong osSerialPutC( ulong serialNum, uchar c )
 
 }
 
-ulong osSerialGetS( ulong serialNum, char *buf, ulong maxLength )
+ulong osSerialGetS( ulong serialNum, char *buf, ulong maxLength, ulong timeoutMs )
 {
    ulong idx;   
    char  c;
    long  rv;
+   ulong startTicks;
 
    idx = 0;
    
+   if( buf == NULL ) return 1;
+
+   buf[0] = 0;
+
+   startTicks = getTicks();
+
    do
    {
 
@@ -80,6 +87,14 @@ ulong osSerialGetS( ulong serialNum, char *buf, ulong maxLength )
       {
          
          rv = osSerialGetC( serialNum );
+
+         if( getTicks() > startTicks + timeoutMs )
+         {
+
+            //timeout
+            return 2;
+
+         }
 
       }while( rv == -1 );
 
@@ -91,6 +106,11 @@ ulong osSerialGetS( ulong serialNum, char *buf, ulong maxLength )
          {
             buf[idx++]  = c;
             buf[idx]    = 0;
+         }
+         else
+         {
+            //buffer overflow
+            return 3;
          }
       }
       

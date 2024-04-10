@@ -4,8 +4,12 @@
 #
 #if compilation fails, update paths to used libs ( libgcc.a, libstdc++.a, etc )
 #
-#program send utility
+#program send utility ( pc )
 #https://github.com/qubeck78/srecsend
+#
+
+#file send utility ( pc app for 'download' command )
+#https://github.com/qubeck78/tangyLink
 #
 
 TARGET = shell

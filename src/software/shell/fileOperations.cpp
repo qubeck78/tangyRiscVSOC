@@ -543,6 +543,8 @@ ulong dfDecodeFileContents( char *rxBuf, tosFile *out, ulong *fileIdx )
    ulong length;
    ulong i;
    uchar fileContentsBuf[32];
+   uchar lrc;
+
 
    length   = 0;
 
@@ -576,12 +578,18 @@ ulong dfDecodeFileContents( char *rxBuf, tosFile *out, ulong *fileIdx )
    }
 
 
+
    if( ( rxBuf[1] == '0' ) && ( rxBuf[2] == '1' ) )
    {
       //file contents
       //:01lld0d1d2d3d4..dncc
 
+
+      lrc = (uchar)':';
+
       length = atoiHex( rxBuf, 3, 2 );
+
+      lrc ^= (uchar)length;
 
       if( length > 32 )
       {
@@ -593,6 +601,13 @@ ulong dfDecodeFileContents( char *rxBuf, tosFile *out, ulong *fileIdx )
       for( i = 0; i < length ; i++ )
       {
          fileContentsBuf[i] = atoiHex( rxBuf, 5 + i * 2, 2 );
+         lrc ^= fileContentsBuf[i];
+      }
+
+      if( lrc != atoiHex( rxBuf, 5 + length * 2, 2 ) )
+      {
+         //bad lrc
+         return 2;
       }
 
       if( osFWrite( out, fileContentsBuf, length ) )
@@ -664,7 +679,7 @@ ulong downloadFile( char *path )
    fileNameBuf2[0] = ':';
    fileNameBuf2[1] = 0;
 
-   osSerialGetS( 0, &fileNameBuf2[1], 254 );
+   osSerialGetS( 0, &fileNameBuf2[1], 254, 500 );
 
    if( dfDecodeFileInformation( fileNameBuf2, fileNameBuf1, &fileSize ) )
    {
@@ -720,9 +735,7 @@ ulong downloadFile( char *path )
       }
       uiDrawInfoWindow( fileNameBuf2, progressBarBuf, _UI_INFO_WINDOW_BUTTONS_CANCEL );
 
-      fileNameBuf1[0] = 0;
-      osSerialGetS( 0, fileNameBuf1, 255 );
-
+      osSerialGetS( 0, fileNameBuf1, 255, 500 );
 
       rv = dfDecodeFileContents( fileNameBuf1, &out, &fileIdx );
 
@@ -738,6 +751,8 @@ ulong downloadFile( char *path )
       else
       {
          //error
+         osSerialPutC( 0, '!' );
+
          abort = 2;
       }
 
