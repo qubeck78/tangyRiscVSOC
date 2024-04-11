@@ -52,8 +52,7 @@
 #define WP          (0)         /* Card is write protected (yes:true, no:false, default:false) */
 
 
-//extern BSP_T *bsp;    //registers base address
-
+#define DELAYCNT100US   2000
 
 
 /*--------------------------------------------------------------------------
@@ -189,7 +188,7 @@ int wait_ready (void)   /* 1:OK, 0:Timeout */
         rcvr_mmc(&d, 1);
         if (d == 0xFF) return 1;
     
-        for( j = 0; j < 1000; j++ );
+        for( j = 0; j < DELAYCNT100US; j++ );
         //dly_us(100);
     }
 
@@ -254,7 +253,7 @@ int rcvr_datablock (    /* 1:OK, 0:Failed */
         rcvr_mmc(d, 1);
         if (d[0] != 0xFF) break;
         
-        for( j = 0; j < 1000; j++ );
+        for( j = 0; j < DELAYCNT100US; j++ );
         //dly_us(100);
     }
     if (d[0] != 0xFE) return 0;     /* If not valid data token, retutn with error */
@@ -411,7 +410,7 @@ DSTATUS disk_initialize (
                 for (tmr = 1000; tmr; tmr--) {          /* Wait for leaving idle state (ACMD41 with HCS bit) */
                     if (send_cmd(ACMD41, 1UL << 30) == 0) break;
                     
-                    for( j = 0; j < 10000; j++ );
+                    for( j = 0; j < DELAYCNT100US * 10; j++ );
                     //dly_us(1000);
                 }
                 if (tmr && send_cmd(CMD58, 0) == 0) {   /* Check CCS bit in the OCR */
@@ -427,7 +426,7 @@ DSTATUS disk_initialize (
             }
             for (tmr = 1000; tmr; tmr--) {          /* Wait for leaving idle state */
                 if (send_cmd(ACMD41, 0) == 0) break;
-                for( j = 0; j < 10000; j++ );
+                for( j = 0; j < DELAYCNT100US * 10; j++ );
                 //dly_us(1000);
             }
             if (!tmr || send_cmd(CMD16, 512) != 0)  /* Set R/W block length to 512 */

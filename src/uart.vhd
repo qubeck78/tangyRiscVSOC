@@ -10,6 +10,7 @@ generic(
 
     clockFreq               : integer := 80000000;
     baudRate                : integer := 230400
+--    baudRate                : integer := 460800
 
 );
 

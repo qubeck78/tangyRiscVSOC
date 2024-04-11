@@ -2,75 +2,131 @@
 
 #include <cstring>
 #include <climits>
+#include <cstdio>
 
-#include "../gfxLib/bsp.h"
-#include "../gfxLib/osAlloc.h"
 #include "../gfxLib/osFile.h"
 #include "../gfxLib/gfBitmap.h"
-#include "../gfxLib/gfDrawing.h"
 #include "../gfxLib/gfFont.h"
-#include "../gfxLib/gfGouraud.h"
-#include "../gfxLib/gfJPEG.h"
-#include "../gfxLib/osUIEvents.h"
-#include "../gfxLib/usbHID.h"
 
 
-extern tgfBitmap     screen;
+extern tgfBitmap        screen;
 extern tgfTextOverlay   con;
 
-tosDir            dir;
-tosDirItem        dirItem;
-   
-extern long             selectorWindowIdx;
-extern long             selectorCursorPos;
-extern long             selectorWindowHeight;
-extern char             selectorFileNames[26][_MAXFILENAMELENGTH + 1];
-extern ulong            selectorFileLengths[26];
-
+tosDir                  dir;
+tosDirItem              dirItem;
 
 extern tgfBitmap        background;
-extern char             path[256];
 
-extern char             lfnBuf[ 512 + 16];
-
-int uiDrawStatusBar()
+ulong uiDrawStatusBar()
 {
-   int rv;
+   ulong rv;
 
    rv = 0;
 
    toSetCursorPos( &con, 0, 0 );
    con.textAttributes   = 0xf0;
 
-   toPrintF( &con, ( char* )"SHELL B20240215                         " );
+   toPrintF( &con, ( char* )"tangyRiscVSOC Shell B20240410                                                    " );
 
+
+   toSetCursorPos( &con, 0, 28 );
+
+   con.textAttributes   = 0xd7;
+   toPrintF( &con, ( char* )"F1 remount" );
+
+   con.textAttributes   = 0x0f;
+   toPrintF( &con, ( char* )" " );
+
+   con.textAttributes   = 0xd7;
+   toPrintF( &con, ( char* )"F2 download" );
+
+   con.textAttributes   = 0x0f;
+   toPrintF( &con, ( char* )" " );
+
+   con.textAttributes   = 0xd7;
+   toPrintF( &con, ( char* )"F3 hex view" );
+
+   con.textAttributes   = 0x0f;
+   toPrintF( &con, ( char* )" " );
+
+   con.textAttributes   = 0xd7;
+   toPrintF( &con, ( char* )"F5 copy" );
+
+   con.textAttributes   = 0x0f;
+   toPrintF( &con, ( char* )" " );
+
+   con.textAttributes   = 0xd7;
+   toPrintF( &con, ( char* )"F6 rename/move" );
+
+   con.textAttributes   = 0x0f;
+   toPrintF( &con, ( char* )" " );
+
+   con.textAttributes   = 0xd7;
+   toPrintF( &con, ( char* )"F7 mkdir" );
+
+   con.textAttributes   = 0x0f;
+   toPrintF( &con, ( char* )" " );
+
+   con.textAttributes   = 0xd7;
+   toPrintF( &con, ( char* )"F8 delete" );
+
+   con.textAttributes   = 0x0f;
+   toPrintF( &con, ( char* )"    " );
+
+
+   toSetCursorPos( &con, 0, 29 );
+
+   con.textAttributes   = 0x5f;
+   toPrintF( &con, ( char* )"BkSp parent" );
+
+   con.textAttributes   = 0x0f;
+   toPrintF( &con, ( char* )" " );
+
+   con.textAttributes   = 0x5f;
+   toPrintF( &con, ( char* )"ENTER view/enter" );
+
+   con.textAttributes   = 0x0f;
+   toPrintF( &con, ( char* )" " );
+
+   con.textAttributes   = 0x5f;
+   toPrintF( &con, ( char* )"TAB switch" );
+
+   con.textAttributes   = 0x0f;
+   toPrintF( &con, ( char* )" " );
+
+   con.textAttributes   = 0x5f;
+   toPrintF( &con, ( char* )"PAUSE exit" );
+
+   con.textAttributes   = 0x0f;
+   toPrintF( &con, ( char* )"                             " );
 
    return rv;
 }
 
-int uiDrawSelectorWindowFrame()
+ulong uiDrawSelectorWindowFrame( tselector *selector )
 {
-   int   rv;
-   int   i;
-   int   j;
-   char  buf[50];
+   ulong    rv;
+   ulong    i;
+   ulong    j;
+   char     buf[50];
 
    rv = 0;
 
-   toSetCursorPos( &con, 0, 1 );
+
+   toSetCursorPos( &con, selector->x, 1 );
    con.textAttributes   = 0x0f;
 
    
    buf[0] = 0xda;
 
-   j = strlen( path );
+   j = strlen( selector->path );
 
    for( i = 0; i < 38; i++ )
    {
 
       if( i < j )
       {
-         buf[ 1 + i ] = path[i];
+         buf[ 1 + i ] = selector->path[i];
       }
       else
       {
@@ -84,11 +140,11 @@ int uiDrawSelectorWindowFrame()
 
    toPrint( &con, buf );
 
-   for( i = 0; i < selectorWindowHeight; i++ )
+   for( i = 0; i < selector->selectorWindowHeight; i++ )
    {
-      toSetCursorPos( &con, 0, 2 + i );
+      toSetCursorPos( &con, selector->x, 2 + i );
       toPrint( &con, ( char* ) "\xb3" );
-      toSetCursorPos( &con, 39, 2 + i );
+      toSetCursorPos( &con, selector->x + 39, 2 + i );
       toPrint( &con, ( char* ) "\xb3" );
    }
 
@@ -102,33 +158,40 @@ int uiDrawSelectorWindowFrame()
    buf[39] = 0xd9;
    buf[40] = 0x00;
 
-   toSetCursorPos( &con, 0, 2 + selectorWindowHeight );
+   toSetCursorPos( &con, selector->x, 2 + selector->selectorWindowHeight );
    toPrint( &con, buf );
 
    return rv;
 }
 
 
-int uiDrawSelectorWindowContents()
+ulong uiDrawSelectorWindowContents( tselector *selector )
 {
-   int   rv;
-   int   i;
-   int      j;
-   char  buf[50];
+   ulong    rv;
+   ulong    i;
+   ulong    j;
+   ulong    idx;
+
+   char     buf[50];
+   ushort   position;
+   char     buf2[16];
+
+
+   position = selector->x + 1;
 
    rv = 0;
 
    con.textAttributes   = 0x0f;
-   for( i = 0; i < selectorWindowHeight; i++ )
+   for( i = 0; i < selector->selectorWindowHeight; i++ )
    {
-      strcpy( buf, selectorFileNames[i] );
+      strncpy( buf, selector->selectorFileNames[i], 38 );
       for( j = strlen( buf ); j < 38; j++ )
       {
          buf[j]      = ' ';
          buf[j+1]    = 0;
       }
 
-      if( selectorFileLengths[i] == 0xffffffff )
+      if( selector->selectorFileLengths[i] == 0xffffffff )
       {
          j = 33;
          buf[j++] = '(';
@@ -137,10 +200,23 @@ int uiDrawSelectorWindowContents()
          buf[j++] = 'r';
          buf[j++] = ')';
       }
+      else
+      {
+         if( selector->selectorFileNames[i][0] != 0 )
+         {
+            sprintf( buf2, "%d", selector->selectorFileLengths[i] );
 
-      toSetCursorPos( &con, 1, 2 + i );
+            idx = 38 - strlen( buf2 );
+            for( j = 0; j < strlen( buf2 ); j++ )
+            {
+               buf[idx + j] = buf2[j];
+            }
+         }
+      }
+ 
+      toSetCursorPos( &con, position, 2 + i );
 
-      if( selectorCursorPos == i )
+      if(( selector->selectorCursorPos == i ) && ( selector->selectorActive ) )
       {
          con.textAttributes = 0x5f;
       }
@@ -157,25 +233,25 @@ int uiDrawSelectorWindowContents()
 }
 
 
-int uiReadDirAndFillSelectorWindowContents()
+ulong uiReadDirAndFillSelectorWindowContents( tselector *selector)
 {
-   int rv;
-   int i;
-   int j;
+   ulong rv;
+   ulong i;
+   ulong j;
 
 
    rv = 0;
 
    //clear selector windows contents
-   for( i = 0 ; i < selectorWindowHeight; i++ )
+   for( i = 0 ; i < selector->selectorWindowHeight; i++ )
    {
-      selectorFileNames[i][0] = 0x0;
-      selectorFileLengths[i] = 0;
+      selector->selectorFileNames[i][0]   = 0;
+      selector->selectorFileLengths[i]    = 0;
 
    }
 
 
-   rv = osDirOpen( &dir, path );
+   rv = osDirOpen( &dir, selector->path );
 
 
    i = 0;
@@ -183,8 +259,6 @@ int uiReadDirAndFillSelectorWindowContents()
 
    do
    {
-      lfnBuf[0] = 0;
-
       rv = osDirRead( &dir, &dirItem );
 
       if( rv )
@@ -192,18 +266,18 @@ int uiReadDirAndFillSelectorWindowContents()
          break;
       }
 
-      if( j >= selectorWindowIdx )
+      if( j >= selector->selectorWindowIdx )
       {
 
-         strncpy( selectorFileNames[i], dirItem.name, _MAXFILENAMELENGTH );
+         strncpy( selector->selectorFileNames[i], dirItem.name, _MAXFILENAMELENGTH );
 
          if( dirItem.type == OS_DIRITEM_DIR )
          {
-            selectorFileLengths[i] = 0xffffffff;
+            selector->selectorFileLengths[i] = 0xffffffff;
          }
          else
          {
-            selectorFileLengths[i] = dirItem.size;
+            selector->selectorFileLengths[i] = dirItem.size;
          }
 
 
@@ -212,7 +286,7 @@ int uiReadDirAndFillSelectorWindowContents()
 
       j++;  //directory item index
 
-   }while( i < selectorWindowHeight );
+   }while( i < selector->selectorWindowHeight );
 
 
    osDirClose( &dir );
@@ -220,22 +294,35 @@ int uiReadDirAndFillSelectorWindowContents()
    return 0;
 }
 
-int uiDrawInfoWindow( char *title, char *contents )
+ulong uiDrawInfoWindow( char *title, char *contents, ulong buttons )
 {
-   ulong wy;
-   char  buf[50];
-   ulong i;
-   ulong j;
+   ulong    wy;
+   ulong    wx;
+   char     buf[80];
+   ulong    i;
+   ulong    j;
+   ushort   width;
+
+   width = strlen( contents );
 
 
-   wy = ( con.height / 2 ) - 1;
+   if( buttons == _UI_INFO_WINDOW_BUTTONS_NONE )
+   {
+      wy = ( con.height / 2 ) - 1;
+   }
+   else
+   {
+      wy = ( con.height / 2 ) - 2;
+   }
 
+   wx = 40 - ( ( width + 2 ) / 2 );
    
    buf[0] = 0xda;
 
    j = strlen( title );
 
-   for( i = 0; i < 36; i++ )
+   //36
+   for( i = 0; i < width; i++ )
    {
 
       if( i < j )
@@ -249,49 +336,96 @@ int uiDrawInfoWindow( char *title, char *contents )
 
    }
 
-   buf[37] = 0xbf;
-   buf[38] = 0x00;
+   buf[width+1] = 0xbf;
+   buf[width+2] = 0x00;
    
-   toSetCursorPos( &con, 1, wy - 1);
-   con.textAttributes   = 0x0e;
+   toSetCursorPos( &con, wx, wy - 1);
+   con.textAttributes   = 0x8e;
    toPrint( &con, buf );
 
    buf[0] = 0xb3;
 
-   j = strlen( contents );
 
-   for( i = 0; i < 36; i++ )
+   for( i = 0; i < width; i++ )
    {
 
-      if( i < j )
-      {
-         buf[ 1 + i ] = contents[i];
-      }
-      else
-      {
-         buf[ 1 + i ] = ' ';
-      }
+      buf[ 1 + i ] = contents[i];
 
    }
 
-   buf[37] = 0xb3;
-   buf[38] = 0x00;
+   buf[width+1] = 0xb3;
+   buf[width+2] = 0x00;
 
-   toSetCursorPos( &con, 1, wy );
+   toSetCursorPos( &con, wx, wy );
    toPrint( &con, buf );
 
+   if( buttons != _UI_INFO_WINDOW_BUTTONS_NONE )
+   {
+
+      buf[0] = 0xb3;
+
+      for( i = 0; i < width; i++ )
+      {
+
+         buf[ 1 + i ] = ' ';
+
+      }
+
+      buf[width+1] = 0xb3;
+      buf[width+2] = 0x00;
+
+      toSetCursorPos( &con, wx, wy + 1 );
+      toPrint( &con, buf );
+
+
+      switch( buttons )
+      {
+         case _UI_INFO_WINDOW_BUTTONS_YESNO:
+
+            toSetCursorPos( &con, wx + 2, wy + 1 );
+            toPrint( &con, (char*)"YES" );
+            
+            toSetCursorPos( &con, wx + width - 3, wy + 1 );
+            toPrint( &con, (char*)"NO" );
+
+            break;
+
+         case _UI_INFO_WINDOW_BUTTONS_OK:
+
+            toSetCursorPos( &con, 39, wy + 1 );
+            toPrint( &con, (char*)"OK" );
+
+            break;
+
+         case _UI_INFO_WINDOW_BUTTONS_CANCEL:
+
+            toSetCursorPos( &con, 37, wy + 1 );
+            toPrint( &con, (char*)"CANCEL" );
+
+            break;
+      }
+
+
+      toSetCursorPos( &con, wx, wy + 2 );
+
+   }
+   else
+   {
+   
+      toSetCursorPos( &con, wx, wy + 1 );
+
+   }
 
    buf[0] = 0xc0;
 
-   for( i = 0; i < 36; i++ )
+   for( i = 0; i < width; i++ )
    {
       buf[ 1 + i ] = 0xc4;
    }
 
-   buf[37] = 0xd9;
-   buf[38] = 0x00;
+   buf[width+1] = 0xd9;
+   buf[width+2] = 0x00;
 
-   toSetCursorPos( &con, 1, wy + 1 );
    toPrint( &con, buf );
 
    con.textAttributes   = 0x0f;

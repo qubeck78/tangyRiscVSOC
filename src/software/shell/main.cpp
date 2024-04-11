@@ -2,6 +2,7 @@
 #include <cstring>
 #include <climits>
 #include <ctype.h>
+#include <cstdio>
 
 #include "../gfxLib/bsp.h"
 #include "../gfxLib/osAlloc.h"
@@ -12,57 +13,40 @@
 #include "../gfxLib/gfGouraud.h"
 #include "../gfxLib/gfJPEG.h"
 #include "../gfxLib/osUIEvents.h"
-#include "../gfxLib/usbHID.h"
 
-#ifdef _GFXLIB_RISCV_FATFS
-
-#include "../gfxLib/ff.h" 
-
-#endif
 
 #include "shellUI.h"
 #include "objViewer.h"
+#include "modPlayer.h"
+#include "fileOperations.h"
+
+extern tgfTextOverlay   con;
+
+tgfBitmap      screen;
+tgfBitmap      background;
+tgfBitmap      screen2;
+tgfBitmap      zBuffer; 
+tgfBitmap      texture; 
+
+char           fileNameBuf1[ 256 ];
+char           fileNameBuf2[ 256 ];
+
+tselector      selectors[2];
+ushort         activeSelectorIdx;
+ushort         inactiveSelectorIdx;
+
+ulong animLeds( ulong j );
+ulong init( void );
+
+ulong asciiTable( void );
+
+ulong viewImage( char *fileName );
+ulong viewFont( char* fileName );
+ulong viewHex( char* fileName );
+ulong viewFile( char* fileName );
 
 
-#ifdef _GFXLIB_RISCV_FATFS
-
-extern   FATFS       fatfs;         //fs object defined in osFile.cpp
-
-#endif
-
-extern   tgfTextOverlay con;
-
-
-long              selectorWindowIdx;
-long              selectorCursorPos;
-long              selectorWindowHeight;
-char              selectorFileNames[26][_MAXFILENAMELENGTH + 1];
-ulong             selectorFileLengths[26];
-
-tgfBitmap            screen;
-tgfBitmap            background;
-tgfBitmap            screen2;
-tgfBitmap            zBuffer; 
-tgfBitmap            texture; 
-
-char              path[256];
-char              lfnBuf[ 512 + 16];
-
-
-int animLeds( int j );
-int init( void );
-int viewImage( char *fileName );
-int pathSelectParentDirectory( char* path );
-char* pathFindExtension( char* fileName );
-int asciiTable( void );
-int viewImage( char* fileName );
-int viewFont( char* fileName );
-int viewHex( char* fileName );
-int viewFile( char* fileName );
-
-
-
-int animLeds( int j )
+ulong animLeds( ulong j )
 {  
       switch( j % 2 )
       {
@@ -84,15 +68,15 @@ int animLeds( int j )
    return 0;
 } 
 
-int init()
+ulong init()
 {
-   int rv;
+   ulong rv;
 
    rv = 0;
 
    bspInit();
 
-   setVideoMode( _VIDEOMODE_320_TEXT40_OVER_GFX );
+   setVideoMode( _VIDEOMODE_320_TEXT80_OVER_GFX );
    
    con.textAttributes = 0x0f;
 
@@ -100,21 +84,14 @@ int init()
 
 
    //alloc screen buffer
-   screen.width         = 320;
+   screen.width            = 320;
    screen.rowWidth         = 512;
-   screen.height        = 240;
+   screen.height           = 240;
       
-   screen.flags         = 0;
+   screen.flags            = 0;
    screen.transparentColor = 0;
    screen.buffer           = osAlloc( screen.rowWidth * screen.height * 2, OS_ALLOC_MEMF_CHIP );   //osAlloc( 320 * 240 * 2 );
-   
-   if( screen.buffer == NULL )
-   {
-      toPrint( &con, ( char* )"\nCan't alloc screen\n" );
-      rv = 1;
-      return rv;
-   } 
-   
+      
    //display screen buffer
    gfDisplayBitmap( &screen );
 
@@ -122,36 +99,23 @@ int init()
    gfFillRect( &screen, 0, 0, screen.width - 1, screen.height - 1 , gfColor( 0, 0, 0 ) ); 
    
    //alloc second screen for doublebuffered 3d viewer
-   screen2.width           = 320;
-   screen2.rowWidth        = 512;
-   screen2.height          = 240;
+   screen2.width              = 320;
+   screen2.rowWidth           = 512;
+   screen2.height             = 240;
       
-   screen2.flags           = 0;
+   screen2.flags              = 0;
    screen2.transparentColor   = 0;
    screen2.buffer             = osAlloc( screen.rowWidth * screen.height * 2, OS_ALLOC_MEMF_CHIP );   
    
-   if( screen2.buffer == NULL )
-   {
-      toPrint( &con, ( char* )"\nCan't alloc screen 2\n" );
-      rv = 1;
-      return rv;
-   } 
-
    //alloc z-buffer
 
-   zBuffer.width           = 320;
-   zBuffer.rowWidth        = 512;
-   zBuffer.height          = 240;
-   zBuffer.flags           = 0;
+   zBuffer.width              = 320;
+   zBuffer.rowWidth           = 512;
+   zBuffer.height             = 240;
+   zBuffer.flags              = 0;
    zBuffer.transparentColor   = 0;
-   zBuffer.buffer          = osAlloc( zBuffer.rowWidth * ( zBuffer.height + 1 ) * 2, OS_ALLOC_MEMF_CHIP );
+   zBuffer.buffer             = osAlloc( zBuffer.rowWidth * ( zBuffer.height + 1 ) * 2, OS_ALLOC_MEMF_CHIP );
    
-   if( zBuffer.buffer == NULL )
-   {
-      toPrint( &con, (char*)"\nCan't alloc z buffer\n" );
-      rv = 1;
-      return rv;
-   } 
 
    gfFillRect( &zBuffer, 0, 0, zBuffer.width - 1, zBuffer.height - 1 , gfColor( 0, 0, 0 ) ); 
 
@@ -160,109 +124,49 @@ int init()
    //init usb HID stack
    rv = usbHIDInit();
 
-   if( rv )
-   {
-      toPrint( &con, ( char* )"USB HID init error\n" );
-      
-      rv = 1;
-      return rv;
-
-   }
-
    #endif
 
    //init events queue
-   osUIEventsInit(); 
+   rv = osUIEventsInit(); 
 
 
    //init filesystem
    rv = osFInit();
 
-   if( rv )
-   {
-      toPrint( &con, ( char* )"SD init error\n" );
-      
-      return rv;
-
-   }
-
-
-   rv = gfLoadBitmapFS( &background, ( char* )"background.gbm" );
-   if( rv )
-   {
-      toPrint( &con, ( char* )"Can't load background.gbm\n" );
-      
-      return rv;
-   }
+   rv = gfLoadBitmapFS( &background, ( char* )"0:/shell/background.gbm" );
 
 
    gfBlitBitmap( &screen, &background, 0, 0 );
 
+   //3d obj viewer init
    rv = objvInit();
 
+   //Amiga module player init
+   rv = mpInit();
 
    return rv;
 }
 
 
-int pathSelectParentDirectory( char* path )
+
+ulong asciiTable()
 {
-   int i;
-   int slashIdx;
-
-   slashIdx = -1;
-
-   for( i = 0; i < strlen( path ); i++ )
-   {
-      if( path[i] == '/' )
-      {
-         slashIdx = i;
-      }
-   }
-   if( slashIdx >= 0 )
-   {
-      path[slashIdx] = 0;  //cut last directory
-   }
-
-   return 0;
-}
-
-char* pathFindExtension( char* fileName )
-{
-   char  *pExtension;
-   int       i;
-
-   pExtension = NULL;
-
-   for( i = 0; i < strlen( fileName ); i++ )
-   {
-      if( fileName[i] == '.' )
-      {
-         pExtension = &fileName[i];
-      }
-   }
-
-   return pExtension;
-}
-
-int asciiTable()
-{
-   int      x;
-   int      y;
-   int         i;
+   short       x;
+   short       y;
+   short       i;
    tosUIEvent  event;
 
    con.textAttributes = 0x0f;
    toCls( &con );
    con.textAttributes = 0xf0;
 
-   for( y = 0; y < 22; y++ )
+   for( y = 0; y < 12; y++ )
    {
       toSetCursorPos( &con, 2, 4 + y );
 
-      for( x = 0; x < 12; x++ )
+      for( x = 0; x < 25; x++ )
       {
-         i = x + y * 12;
+         i = x + y * 25;
          
          if( i < 0x100 )
          {
@@ -303,14 +207,14 @@ int asciiTable()
 }
 
 
-int viewImage( char* fileName )
+ulong viewImage( char* fileName )
 {
    tgfBitmap   img;
-   int      rv;
+   ulong       rv;
    tosUIEvent  event;
-   int         fileNameLength;
-   short    x;
-   short    y;
+   ulong       fileNameLength;
+   ushort      x;
+   ushort      y;
 
 
    con.textAttributes = 0x0f;
@@ -382,15 +286,15 @@ int viewImage( char* fileName )
    return rv;
 }
 
-int viewFont( char* fileName )
+ulong viewFont( char* fileName )
 {
    tgfFont     font;
-   int      rv;
+   ulong       rv;
    tosUIEvent  event;
-   int         fileNameLength;
-   int      x;
-   int         y;
-   int         i;
+   ulong       fileNameLength;
+   short       x;
+   short       y;
+   ulong       i;
 
    con.textAttributes = 0x0f;
 
@@ -466,23 +370,22 @@ int viewFont( char* fileName )
    return rv;
 }
 
-int viewHex( char* fileName )
+ulong viewHex( char* fileName )
 {
-   int         rv;
-   unsigned char  buf[32];
-   tosFile         in;
+   ulong       rv;
+   uchar       buf[32];
+   tosFile     in;
+
+   ushort      x;
+   ushort      y;
+   ulong       i;
+   uchar       c;
+
+   tosUIEvent  event;
+   ulong       nbr;
+   ushort      eofReached;
 
    rv = 0;
-
-   int         x;
-   int         y;
-   int            i;
-   unsigned char  c;
-
-   tosUIEvent     event;
-   ulong       nbr;
-   ushort         eofReached;
-
 
    if( osFOpen( &in, fileName, OS_FILE_READ ) )
    {
@@ -495,17 +398,31 @@ int viewHex( char* fileName )
 
    toPrintF( &con, (char*)"%s", fileName );
 
+   toSetCursorPos( &con, 0, 29 );
+
+   con.textAttributes   = 0x5f;
+   toPrintF( &con, ( char* )"ESC exit" );
+
+   con.textAttributes   = 0x0f;
+   toPrintF( &con, ( char* )" " );
+
+   con.textAttributes   = 0x5f;
+   toPrintF( &con, ( char* )"SPC next" );
+
+   con.textAttributes   = 0x0f;
+   toPrintF( &con, ( char* )" " );
+
    do
    {
       eofReached = 0;
 
-      for( y = 1; y < 30; y++ )
+      for( y = 1; y < 29; y++ )
       {
-         osFRead( &in, buf, 8, &nbr );
+         osFRead( &in, buf, 16, &nbr );
 
 
          toSetCursorPos( &con, 0, y );
-         toPrintF( &con, (char*) "                                       " );
+         toPrintF( &con, (char*) "                                                                              " );
 
          toSetCursorPos( &con, 0, y );
          
@@ -516,6 +433,8 @@ int viewHex( char* fileName )
 
          toPrintF( &con, (char*)" " );
          
+         toSetCursorPos( &con, 54, y );
+
          for( i = 0; i < nbr; i++ )
          {
             c = buf[i];
@@ -568,12 +487,12 @@ int viewHex( char* fileName )
    return rv;
 }
 
-int viewFile( char* fileName )
+ulong viewFile( char* fileName )
 {
-   int    rv;
+   ulong  rv;
    char   extension[32];
    char  *pExtension;
-   int       i;
+   ulong  i;
 
    rv = 0;
 
@@ -618,6 +537,10 @@ int viewFile( char* fileName )
    {
       rv = objvView( fileName );
    }
+   else if( strcmp( extension, ".mod" ) == 0 )
+   {
+      rv = mpPlay( fileName );
+   }
 
 
    else{
@@ -632,75 +555,12 @@ int viewFile( char* fileName )
 }
 
 
-int remountSD()
-{
-   int rv;
-   tosUIEvent     event;
-
-   //unmount sd
-
-   #ifdef _GFXLIB_RISCV_FATFS
-   f_mount( 0, NULL );
-
-   uiDrawInfoWindow( (char*)"Card unmounted", (char*)"Insert new card and press any key" );
-
-   do
-   {
-   
-      if( !osGetUIEvent( &event ) )
-      {
-
-         if( event.type == OS_EVENT_TYPE_KEYBOARD_KEYPRESS )
-         {
-            break;
-         }
-
-      }
-
-   }while( 1 );
-
-
-   rv = osFInit();
-
-   if( rv )
-   {
-      
-      uiDrawInfoWindow( (char*)"Error", (char*)"SD init error" );
-      
-   }else
-   {
-
-      uiDrawInfoWindow( (char*)"Card mounted", (char*)"Press any key" );
-
-   }
-
-
-   do
-   {
-   
-      if( !osGetUIEvent( &event ) )
-      {
-
-         if( event.type == OS_EVENT_TYPE_KEYBOARD_KEYPRESS )
-         {
-            break;
-         }
-
-      }
-
-   }while( 1 );
-
-   #endif
-
-   return 0;
-}
-
 
 int main()
 {
-   int         i;
-   int         rv;
-   int         refreshScreen;
+   long           i;
+   ulong          rv;
+   ushort         refreshScreen;
 
    tosUIEvent     event;
 
@@ -709,27 +569,53 @@ int main()
    rv = init();
 
    //reset dir cursors
-   selectorWindowIdx       = 0;
-   selectorCursorPos       = 0;
-   
-   //default selector window height
-   selectorWindowHeight = 26;
+   selectors[0].selectorWindowIdx   = 0;
+   selectors[0].selectorCursorPos   = 0;
 
+   selectors[1].selectorWindowIdx   = 0;
+   selectors[1].selectorCursorPos   = 0;
+
+
+   activeSelectorIdx                = 0;
+   inactiveSelectorIdx              = 1;
+
+   selectors[0].selectorActive      = 1;
+   selectors[1].selectorActive      = 0;
+
+   selectors[0].selectorWindowIdx   = 0;
+   selectors[0].selectorCursorPos   = 0;
+
+   selectors[1].selectorWindowIdx   = 0;
+   selectors[1].selectorCursorPos   = 0;
    
+   //selector locations
+   selectors[0].x          = 0;
+   selectors[0].y          = 1;
+
+   selectors[1].x          = 40;
+   selectors[1].y          = 1;
+
+   //default selector window height
+   selectors[0].selectorWindowHeight   = _SELECTOR_WINDOW_HEIGHT;
+   selectors[1].selectorWindowHeight   = _SELECTOR_WINDOW_HEIGHT;
+
 
    //default path
 
    #ifdef _GFXLIB_SDL
 
-      strcpy( path, "." );
+      strcpy( selectors[0].path, "." );
+      strcpy( selectors[1].path, "." );
 
    #else
 
-      strcpy( path, "0:" );
+      strcpy( selectors[0].path, "0:" );
+      strcpy( selectors[1].path, "0:" );
 
    #endif
 
-   uiReadDirAndFillSelectorWindowContents();
+   uiReadDirAndFillSelectorWindowContents( &selectors[0] );
+   uiReadDirAndFillSelectorWindowContents( &selectors[1] );
 
 
 
@@ -739,7 +625,8 @@ int main()
    {
       if( refreshScreen == 1 )
       {
-         uiDrawSelectorWindowContents();
+         uiDrawSelectorWindowContents( &selectors[0] );
+         uiDrawSelectorWindowContents( &selectors[1] );
          refreshScreen = 0;
       
       }else if( refreshScreen == 2 )
@@ -749,20 +636,19 @@ int main()
 
          con.textAttributes = 0x0f;
 
-         toCls( &con );
+         //toCls( &con );
          
          uiDrawStatusBar();
-         uiDrawSelectorWindowFrame();
-         uiDrawSelectorWindowContents();
+         uiDrawSelectorWindowFrame( &selectors[0] );
+         uiDrawSelectorWindowFrame( &selectors[1] );
+         uiDrawSelectorWindowContents( &selectors[0] );
+         uiDrawSelectorWindowContents( &selectors[1] );
 
          refreshScreen = 0;
       }
 
       while( !osGetUIEvent( &event ) )
       {
-         toSetCursorPos( &con, 0, 29 );
-
-         toPrintF( &con, (char*)"%02x", event.arg1 );       
 
          if( event.type == OS_EVENT_TYPE_KEYBOARD_KEYPRESS )
          {
@@ -774,25 +660,49 @@ int main()
                   reboot();
                   break;
 
+               case _KEYCODE_TAB:
+
+                  if( activeSelectorIdx )
+                  {
+                     activeSelectorIdx             = 0;
+                     inactiveSelectorIdx           = 1;
+
+                     selectors[0].selectorActive   = 1;
+                     selectors[1].selectorActive   = 0;
+                     
+                  }
+                  else
+                  {
+                     activeSelectorIdx             = 1;
+                     inactiveSelectorIdx           = 0;
+
+                     selectors[0].selectorActive   = 0;
+                     selectors[1].selectorActive   = 1;
+                  }
+
+                  refreshScreen  = 1;
+
+                  break;
+
                case _KEYCODE_UP:
                
-                  if( selectorCursorPos > 0 )
+                  if( selectors[activeSelectorIdx].selectorCursorPos > 0 )
                   {
-                     selectorCursorPos--;
+                     selectors[activeSelectorIdx].selectorCursorPos--;
                      refreshScreen = 1;
                   }
                   else
                   {
-                     selectorCursorPos = selectorWindowHeight - 1;
-                     selectorWindowIdx -= selectorWindowHeight;
+                     selectors[activeSelectorIdx].selectorCursorPos = selectors[activeSelectorIdx].selectorWindowHeight - 1;
+                     selectors[activeSelectorIdx].selectorWindowIdx -= selectors[activeSelectorIdx].selectorWindowHeight;
                      
-                     if( selectorWindowIdx < 0 )
+                     if( selectors[activeSelectorIdx].selectorWindowIdx < 0 )
                      {
-                        selectorWindowIdx = 0;
-                        selectorCursorPos = 0;
+                        selectors[activeSelectorIdx].selectorWindowIdx = 0;
+                        selectors[activeSelectorIdx].selectorCursorPos = 0;
                      }
 
-                     uiReadDirAndFillSelectorWindowContents();
+                     uiReadDirAndFillSelectorWindowContents( &selectors[activeSelectorIdx] );
                      
                      refreshScreen  = 1;
 
@@ -802,16 +712,16 @@ int main()
 
                case _KEYCODE_DOWN:
 
-                  if( selectorCursorPos < ( selectorWindowHeight - 1 ) )
+                  if( selectors[activeSelectorIdx].selectorCursorPos < ( selectors[activeSelectorIdx].selectorWindowHeight - 1 ) )
                   {
-                     selectorCursorPos++;
+                     selectors[activeSelectorIdx].selectorCursorPos++;
                      refreshScreen = 1;
                   }else
                   {
-                     selectorCursorPos    = 0;
-                     selectorWindowIdx    += selectorWindowHeight;
+                     selectors[activeSelectorIdx].selectorCursorPos    = 0;
+                     selectors[activeSelectorIdx].selectorWindowIdx    += selectors[activeSelectorIdx].selectorWindowHeight;
                      
-                     uiReadDirAndFillSelectorWindowContents();
+                     uiReadDirAndFillSelectorWindowContents( &selectors[activeSelectorIdx] );
                      
                      refreshScreen  = 1;
                   }
@@ -820,14 +730,15 @@ int main()
          
                case _KEYCODE_PGUP:
 
-                  selectorWindowIdx -= selectorWindowHeight;
+                  selectors[activeSelectorIdx].selectorWindowIdx -= selectors[activeSelectorIdx].selectorWindowHeight;
                   
-                  if( selectorWindowIdx < 0 )
+                  if( selectors[activeSelectorIdx].selectorWindowIdx < 0 )
                   {
-                     selectorWindowIdx = 0;
+                     selectors[activeSelectorIdx].selectorWindowIdx = 0;
+                     selectors[activeSelectorIdx].selectorCursorPos = 0;
                   }
 
-                  uiReadDirAndFillSelectorWindowContents();
+                  uiReadDirAndFillSelectorWindowContents( &selectors[activeSelectorIdx] );
                      
                   refreshScreen  = 1;
 
@@ -835,9 +746,9 @@ int main()
 
                case _KEYCODE_PGDOWN:
 
-                  selectorWindowIdx += selectorWindowHeight;
+                  selectors[activeSelectorIdx].selectorWindowIdx += selectors[activeSelectorIdx].selectorWindowHeight;
                   
-                  uiReadDirAndFillSelectorWindowContents();
+                  uiReadDirAndFillSelectorWindowContents( &selectors[activeSelectorIdx] );
                      
                   refreshScreen  = 1;
 
@@ -848,22 +759,137 @@ int main()
 
                   remountSD();
 
-                  selectorWindowIdx = 0;
-                  selectorCursorPos = 0;
+                  selectors[0].selectorWindowIdx = 0;
+                  selectors[0].selectorCursorPos = 0;
+
+                  selectors[1].selectorWindowIdx = 0;
+                  selectors[1].selectorCursorPos = 0;
 
                   //default path
 
                   #ifdef _GFXLIB_SDL
 
-                     strcpy( path, "." );
+                     strcpy( selectors[0].path, "." );
+                     strcpy( selectors[1].path, "." );
 
                   #else
 
-                     strcpy( path, "0:" );
+                     strcpy( selectors[0].path, "0:" );
+                     strcpy( selectors[1].path, "0:" );
 
                   #endif
 
-                  uiReadDirAndFillSelectorWindowContents();
+                  uiReadDirAndFillSelectorWindowContents( &selectors[0] );
+                  uiReadDirAndFillSelectorWindowContents( &selectors[1] );
+
+                  refreshScreen = 2;
+
+                  break;
+
+               case _KEYCODE_F2:
+
+                  downloadFile( selectors[activeSelectorIdx].path );
+
+                  //re-read directory contents
+                  uiReadDirAndFillSelectorWindowContents( &selectors[0] );
+                  uiReadDirAndFillSelectorWindowContents( &selectors[1] );
+
+                  refreshScreen = 2;
+
+                  break;
+
+               case _KEYCODE_F3:
+
+                  //create full file path
+                  pathGetSelectedFileFromSelector( &selectors[activeSelectorIdx], fileNameBuf1 );
+
+                  //hex view file
+                  viewHex( fileNameBuf1 );             
+
+                  refreshScreen = 2;
+
+                  break;
+
+               case _KEYCODE_F5:
+
+                  //create full src file path
+                  pathGetSelectedFileFromSelector( &selectors[activeSelectorIdx], fileNameBuf1 );
+
+                  //create full dst file path
+                  strcpy( fileNameBuf2, selectors[inactiveSelectorIdx].path );
+                  strcat( fileNameBuf2, "/" );
+                  strcat( fileNameBuf2, selectors[activeSelectorIdx].selectorFileNames[ selectors[activeSelectorIdx].selectorCursorPos ] );
+
+                  copyFile( fileNameBuf1, fileNameBuf2, (char*)"Copy" );
+
+                  //re-read directory contents
+                  uiReadDirAndFillSelectorWindowContents( &selectors[0] );
+                  uiReadDirAndFillSelectorWindowContents( &selectors[1] );
+
+                  refreshScreen = 2;
+                     
+                  break;
+
+               case _KEYCODE_F6:
+
+
+                  if( strcmp( selectors[activeSelectorIdx].path, selectors[inactiveSelectorIdx].path ) == 0 )
+                  {
+                     //paths are the same
+
+                     renameFile( selectors[activeSelectorIdx].path, selectors[activeSelectorIdx].selectorFileNames[ selectors[activeSelectorIdx].selectorCursorPos] );
+
+                  }
+                  else
+                  {
+                     //paths are different
+
+                     //use file from active selector, and path from inactive selector
+
+                     //src path + file
+                     pathGetSelectedFileFromSelector( &selectors[activeSelectorIdx], fileNameBuf1 );
+
+                     //dest path + src file
+                     strcpy( fileNameBuf2, selectors[inactiveSelectorIdx].path );
+                     strcat( fileNameBuf2, "/" );
+                     strcat( fileNameBuf2, selectors[activeSelectorIdx].selectorFileNames[ selectors[activeSelectorIdx].selectorCursorPos ]);
+
+                     //
+                     moveFile( fileNameBuf1, fileNameBuf2 );
+
+                  }
+
+                  //re-read directory contents
+                  uiReadDirAndFillSelectorWindowContents( &selectors[0] );
+                  uiReadDirAndFillSelectorWindowContents( &selectors[1] );
+
+                  refreshScreen = 2;
+
+                  break;
+
+               case _KEYCODE_F7:
+
+                  createDir( selectors[activeSelectorIdx].path );
+
+                  //re-read directory contents
+                  uiReadDirAndFillSelectorWindowContents( &selectors[0] );
+                  uiReadDirAndFillSelectorWindowContents( &selectors[1] );
+
+                  refreshScreen = 2;
+
+                  break;
+
+               case _KEYCODE_F8:
+
+                  //create full file path
+                  pathGetSelectedFileFromSelector( &selectors[activeSelectorIdx], fileNameBuf1 );
+
+                  //delete file
+                  deleteFile( fileNameBuf1 );
+
+                  //re-read directory contents
+                  uiReadDirAndFillSelectorWindowContents( &selectors[0] );
+                  uiReadDirAndFillSelectorWindowContents( &selectors[1] );
 
                   refreshScreen = 2;
 
@@ -878,28 +904,29 @@ int main()
 
                case _KEYCODE_BACKSPACE:
 
-                  pathSelectParentDirectory( path );
+                  pathSelectParentDirectory( selectors[activeSelectorIdx].path );
 
-                  selectorWindowIdx = 0;
-                  selectorCursorPos = 0;
+                  selectors[activeSelectorIdx].selectorWindowIdx = 0;
+                  selectors[activeSelectorIdx].selectorCursorPos = 0;
 
-                  uiReadDirAndFillSelectorWindowContents();
+                  uiReadDirAndFillSelectorWindowContents( &selectors[activeSelectorIdx] );
 
                   refreshScreen = 2;                     
+
                   break;
 
                case _KEYCODE_ENTER:
 
-                  if( selectorFileLengths[selectorCursorPos] == 0xffffffff )
+                  if( selectors[activeSelectorIdx].selectorFileLengths[selectors[activeSelectorIdx].selectorCursorPos] == 0xffffffff )
                   {
                      //dir
-                     strcat( path, "/" );
-                     strcat( path, selectorFileNames[selectorCursorPos] );
+                     strcat( selectors[activeSelectorIdx].path, "/" );
+                     strcat( selectors[activeSelectorIdx].path, selectors[activeSelectorIdx].selectorFileNames[selectors[activeSelectorIdx].selectorCursorPos] );
                      
-                     selectorWindowIdx = 0;
-                     selectorCursorPos = 0;
+                     selectors[activeSelectorIdx].selectorWindowIdx = 0;
+                     selectors[activeSelectorIdx].selectorCursorPos = 0;
 
-                     uiReadDirAndFillSelectorWindowContents();
+                     uiReadDirAndFillSelectorWindowContents( &selectors[activeSelectorIdx] );
 
                      refreshScreen = 2;                     
 
@@ -907,15 +934,14 @@ int main()
                   else
                   {
                      //create full file path
-                     strcpy( lfnBuf, path );
-                     strcat( lfnBuf, "/" );
-                     strcat( lfnBuf, selectorFileNames[ selectorCursorPos ]);
+                     pathGetSelectedFileFromSelector( &selectors[activeSelectorIdx], fileNameBuf1 );
 
                      //view file
-                     viewFile(  lfnBuf );             
+                     viewFile( fileNameBuf1 );             
                      refreshScreen = 2;
                   }
-               break;
+                  
+                  break;
             }
          }
 
@@ -924,5 +950,4 @@ int main()
       
    }while( 1 );
    
-
 } 

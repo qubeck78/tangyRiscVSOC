@@ -796,7 +796,6 @@ begin
     sdramDmaClock       <= clkd2_80;
     
 -- sdram chip clock
-
     sdramClock          <= clkd2_80ps;
 
 -- usb host clock
